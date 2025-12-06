@@ -42,7 +42,7 @@ class WebSocketService {
       try {
         const serverUrl = import.meta.env.VITE_WS_URL || 
                          import.meta.env.VITE_API_URL?.replace(/^http/, 'ws') || 
-                         'ws://localhost:5000';
+                         (typeof window !== 'undefined' ? window.location.origin.replace(/^http/, 'ws') : '/api');
 
         this.socket = io(serverUrl, {
           auth: { token },
