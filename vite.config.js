@@ -58,7 +58,6 @@ export default defineConfig({
   host: true,
   allowedHosts: ["kgamify-1-1.onrender.com"],
 },
-,
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
