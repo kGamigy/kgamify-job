@@ -459,7 +459,7 @@ const Login = ({ setLoggedInEmail }) => {
             </a>.
             {' '}For support, visit{' '}
             <a
-              href="/contact"
+              href="/support"
               className="text-[#ff8200] hover:text-[#e57400] font-semibold"
             >
               Contact Us
