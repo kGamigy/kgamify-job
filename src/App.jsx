@@ -162,6 +162,7 @@ function AppContent() {
                 <Route path="/cookies" element={<CookiePolicy $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
                 <Route path="/support" element={<Support $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
+                <Route path="/cancellations-refunds" element={<CancellationsRefunds $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
               </Routes>
             </Suspense>
           </div>
