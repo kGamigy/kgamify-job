@@ -56,7 +56,7 @@ export default defineConfig({
   preview: {
   port: process.env.PORT || 3000,
   host: true,
-  allowedHosts: ["kgamify-1-1.onrender.com"],
+  allowedHosts: ["kgamify-job.onrender.com"],
 },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
