@@ -1,6 +1,6 @@
 // Environment configuration
 export const config = {
-  API_URL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://kgamify-1-1.onrender.com/api'),
+  API_URL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://kgamify-job.onrender.com/api'),
   AI_API_URL: import.meta.env.VITE_AI_API_URL || 'http://localhost:8000',
   NODE_ENV: import.meta.env.MODE,
   IS_DEVELOPMENT: import.meta.env.DEV,
