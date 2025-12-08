@@ -403,7 +403,9 @@ import { colors } from '../config/designSystem';
       </div>
     </nav>
     {planMeta?.adsEnabled && (
-      <div className={`w-full text-center text-xs sm:text-sm py-2 ${dark ? 'bg-gray-800 text-gray-200 border-b border-gray-700' : 'bg-orange-50 text-orange-700 border-b border-orange-200'} font-medium`}>Sponsored: You are on Free plan. Upgrade to remove ads & unlock AI recommendations.</div>
+      <div className={`w-full text-center text-xs sm:text-sm py-2 ${dark ? 'bg-gray-800 text-gray-200 border-b border-gray-700' : 'bg-orange-50 text-orange-700 border-b border-orange-200'} font-medium`}>
+        Sponsored: You are on Free plan. Upgrade to get extra features.
+      </div>
     )}
     </div>
   );

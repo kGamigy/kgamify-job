@@ -457,6 +457,13 @@ const Login = ({ setLoggedInEmail }) => {
             >
               Cookie Policy
             </a>.
+            {' '}For support, visit{' '}
+            <a
+              href="/support"
+              className="text-[#ff8200] hover:text-[#e57400] font-semibold"
+            >
+              Contact Us
+            </a>.
           </p>
 
           {/* Register Link */}

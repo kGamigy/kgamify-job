@@ -42,10 +42,11 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Support = lazy(() => import("./pages/Support"));
+const CancellationsRefunds = lazy(() => import("./pages/CancellationsRefunds"));
 
 function AppContent() {
   const location = useLocation();
-  const isLoginPage = ["/","/register","/forgot-password","/reset-password","/admin-login","/verify-email","/terms-of-service","/cookies","/privacy-policy","/support"].includes(location.pathname);
+  const isLoginPage = ["/","/register","/forgot-password","/reset-password","/admin-login","/verify-email","/terms-of-service","/cookies","/privacy-policy","/support","/cancellations-refunds"].includes(location.pathname);
   
   const isAdminPage = location.pathname.startsWith('/admin');
   
@@ -161,6 +162,7 @@ function AppContent() {
                 <Route path="/cookies" element={<CookiePolicy $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
                 <Route path="/support" element={<Support $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
+                <Route path="/cancellations-refunds" element={<CancellationsRefunds $isDarkMode={isDarkMode} isDarkMode={isDarkMode} />} />
               </Routes>
             </Suspense>
           </div>

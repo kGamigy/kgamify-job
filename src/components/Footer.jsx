@@ -49,6 +49,7 @@ function Footer({ isDarkMode, $isDarkMode }) {
               <li><a className={linkCls} href="/privacy-policy">Privacy Policy</a></li>
               <li><a className={linkCls} href="/terms-of-service?from=login">Terms of Service</a></li>
               <li><a className={linkCls} href="/cookies?from=login">Cookie Policy</a></li>
+              <li><a className={linkCls} href="/cancellations-refunds">Cancellations & Refunds</a></li>
             </ul>
           </div>
         </div>
@@ -63,6 +64,8 @@ function Footer({ isDarkMode, $isDarkMode }) {
             <a className={linkCls} href="/cookies?from=login">Cookie Policy</a>
             <span className="opacity-30">|</span>
             <a className={linkCls} href="/support">Support</a>
+            <span className="opacity-30">|</span>
+            <a className={linkCls} href="/cancellations-refunds">Cancellations & Refunds</a>
           </div>
         </div>
       </div>

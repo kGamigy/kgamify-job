@@ -300,7 +300,7 @@ export default function Plans({ isDarkMode = false }) {
                 </div>
                 <div className="mb-4 flex flex-col gap-1">
                   <span className="text-4xl font-extrabold text-[#ff8200]">{def.price}</span>
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{def.duration} • {def.limit} job posts</span>
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{def.duration} • {def.limit} jobs/month</span>
                 </div>
                 <ul className="text-sm mb-8 space-y-3 opacity-95">
                   {def.features.map(f => (
