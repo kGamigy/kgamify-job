@@ -66,11 +66,22 @@ const JobApplications = ({ isDarkMode, email }) => {
                   </div>
                 </div>
                 
-                <div>
-                  <span className="text-sm font-medium text-black dark:text-white">Applied on:</span>
-                  <span className="ml-2 text-black dark:text-white">
-                    {new Date(application.createdAt || application.dateApplied).toLocaleDateString()}
-                  </span>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium text-black dark:text-white">Applied on:</span>
+                    <span className="ml-2 text-black dark:text-white">
+                      {new Date(application.createdAt || application.dateApplied).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  {application.appName && (
+                    <div>
+                      <span className="text-sm font-medium text-black dark:text-white">Source:</span>
+                      <span className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded">
+                        {application.appName}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               

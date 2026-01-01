@@ -92,12 +92,17 @@ app.use('/api/companies', require('./routes/company'));
 app.use('/api/application', require('./routes/application'));
 app.use('/api/job', require('./routes/job'));
 app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/external', require('./routes/external'));
-app.use('/api/payments', require('./routes/payments'));
+
+// External API routes (public endpoints)
+const externalRoutes = require('./routes/external');
+app.use('/api/external', externalRoutes);
 
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin', externalRoutes); // Mount external routes for admin API key management
 app.use('/api/admin-management', require('./routes/adminManagement'));
+
+app.use('/api/payments', require('./routes/payments'));
 
 // Protected route
 app.get("/protected", verifyToken, (req, res) => {

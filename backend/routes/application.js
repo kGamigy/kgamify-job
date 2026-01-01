@@ -97,7 +97,11 @@ router.post('/', upload.single('resume'), async (req, res) => {
       applicationData.resume = req.file.path; // Cloudinary URL
       applicationData.resumePublicId = req.file.filename || 
         (req.file.public_id ? req.file.public_id : `resume_${Date.now()}`);
-      
+    }
+
+    // Store appName if provided (e.g., "kGamify Web", "kGamify Mobile App")
+    if (req.body.appName) {
+      applicationData.appName = req.body.appName;
     }
 
     // Map applicant email if provided as `email` from form

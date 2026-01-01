@@ -1,9 +1,12 @@
 /* eslint-disable no-console */
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const Company = require('../models/Company');
+const ApiKey = require('../models/ApiKey');
+const { adminAuth } = require('../middleware/auth');
 
 // Optional API key middleware (set EXTERNAL_API_KEY in .env to enforce)
 function requireApiKey(req, res, next) {
@@ -15,6 +18,175 @@ function requireApiKey(req, res, next) {
 
   return res.status(401).json({ error: 'Unauthorized: invalid API key' });
 }
+
+// New middleware to verify API key from database
+const verifyDynamicApiKey = async (req, res, next) => {
+  try {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey) {
+      return res.status(401).json({ error: 'API key required' });
+    }
+
+    const key = await ApiKey.findOne({ key: apiKey, active: true });
+    if (!key) {
+      return res.status(401).json({ error: 'Invalid or inactive API key' });
+    }
+
+    // Update last used timestamp
+    key.lastUsed = new Date();
+    await key.save();
+
+    req.apiKey = key;
+    next();
+  } catch (error) {
+    console.error('API key verification error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ADMIN ROUTES - Manage API Keys
+
+// Get all API keys (Admin only)
+router.get('/api-keys', adminAuth, async (req, res) => {
+  try {
+    const keys = await ApiKey.find().sort({ createdAt: -1 });
+    res.json({ keys });
+  } catch (error) {
+    console.error('Fetch API keys error:', error);
+    res.status(500).json({ error: 'Failed to fetch API keys' });
+  }
+});
+
+// Create new API key (Admin only)
+router.post('/api-keys', adminAuth, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    // Generate a secure random API key
+    const key = 'kgamify_' + crypto.randomBytes(32).toString('hex');
+
+    const newApiKey = new ApiKey({
+      name: name.trim(),
+      description: description?.trim() || '',
+      key,
+      createdBy: req.admin._id,
+      active: true
+    });
+
+    await newApiKey.save();
+
+    res.status(201).json({
+      message: 'API key created successfully',
+      key: newApiKey.key,
+      id: newApiKey._id
+    });
+  } catch (error) {
+    console.error('Create API key error:', error);
+    res.status(500).json({ error: 'Failed to create API key' });
+  }
+});
+
+// Toggle API key active status (Admin only)
+router.patch('/api-keys/:id/toggle', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active } = req.body;
+
+    const apiKey = await ApiKey.findById(id);
+    if (!apiKey) {
+      return res.status(404).json({ error: 'API key not found' });
+    }
+
+    apiKey.active = active;
+    await apiKey.save();
+
+    res.json({
+      message: `API key ${active ? 'enabled' : 'disabled'} successfully`,
+      key: apiKey
+    });
+  } catch (error) {
+    console.error('Toggle API key error:', error);
+    res.status(500).json({ error: 'Failed to toggle API key' });
+  }
+});
+
+// Delete API key (Admin only)
+router.delete('/api-keys/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const apiKey = await ApiKey.findByIdAndDelete(id);
+    if (!apiKey) {
+      return res.status(404).json({ error: 'API key not found' });
+    }
+
+    res.json({ message: 'API key deleted successfully' });
+  } catch (error) {
+    console.error('Delete API key error:', error);
+    res.status(500).json({ error: 'Failed to delete API key' });
+  }
+});
+
+// EXTERNAL API ROUTES WITH DYNAMIC API KEYS
+
+// Get all jobs for a specific company (with dynamic API key)
+router.get('/jobs/company/:companyEmail', verifyDynamicApiKey, async (req, res) => {
+  try {
+    const { companyEmail } = req.params;
+
+    const jobs = await Job.find({ companyEmail })
+      .select('-__v')
+      .sort({ postedDate: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      count: jobs.length,
+      company: companyEmail,
+      jobs
+    });
+  } catch (error) {
+    console.error('Fetch company jobs error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
+
+// Get all jobs with pagination and filters (with dynamic API key)
+router.get('/jobs/all', verifyDynamicApiKey, async (req, res) => {
+  try {
+    const { limit = 100, skip = 0, active } = req.query;
+
+    const query = {};
+    if (active !== undefined) {
+      query.active = active === 'true';
+    }
+
+    const jobs = await Job.find(query)
+      .select('-__v')
+      .sort({ postedDate: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .lean();
+
+    const total = await Job.countDocuments(query);
+
+    res.json({
+      success: true,
+      count: jobs.length,
+      total,
+      limit: parseInt(limit),
+      skip: parseInt(skip),
+      jobs
+    });
+  } catch (error) {
+    console.error('Fetch all jobs error:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
+  }
+});
 
 // GET /api/external/jobs?companyEmail=... | company=... | email=...
 // Exports jobs for a specific company (public-ish, can be guarded via API key)
