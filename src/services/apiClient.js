@@ -7,9 +7,9 @@ import { config as appConfig } from '../config/env';
  */
 
 // Base configuration
-// Prefer explicit VITE_API_URL; fall back to env config (which defaults to the deployed backend);
-// avoid localhost in production builds to prevent unreachable API in prod.
-const API_BASE_URL = import.meta.env.VITE_API_URL || appConfig.API_URL || 'https://job-portal-backend-629b.onrender.com/api';
+// In production (deployed on same origin), use relative /api paths.
+// In development, use env var or fallback to localhost.
+const API_BASE_URL = import.meta.env.VITE_API_URL || appConfig.API_URL || (import.meta.env.PROD ? '/api' : 'https://kgamify-job.onrender.com/api');
 // Increase default timeout to better handle cold starts and file uploads
 const DEFAULT_TIMEOUT = 30000;
 const MAX_RETRY_ATTEMPTS = 3;
