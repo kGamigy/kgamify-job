@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import axios from 'axios';
+import { getBaseUrl } from '../utils/apiUrl';
 
 export default function AdminApplicants({ isDarkMode }) {
   const { companyId } = useParams();
@@ -19,7 +20,7 @@ export default function AdminApplicants({ isDarkMode }) {
       try {
         setLoading(true);
         // Determine company email from any admin list endpoint
-        const base = import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+        const base = getBaseUrl();
         const headers = { 'x-auth-token': token };
         const tryLists = [
           axios.get(`${base}/api/admin/companies?status=approved`, { headers }).catch(()=>({ data: [] })),

@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client';
 import store from '../store';
+import { getWsUrl } from '../utils/apiUrl';
 import { 
   addNotification, 
   updateNotification, 
@@ -40,9 +41,7 @@ class WebSocketService {
     
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
-        const serverUrl = import.meta.env.VITE_WS_URL || 
-                         import.meta.env.VITE_API_URL?.replace(/^http/, 'ws') || 
-                         (typeof window !== 'undefined' ? window.location.origin.replace(/^http/, 'ws') : '/api');
+        const serverUrl = getWsUrl();
 
         this.socket = io(serverUrl, {
           auth: { token },

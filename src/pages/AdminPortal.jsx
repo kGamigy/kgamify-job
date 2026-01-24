@@ -17,7 +17,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { grantSensitiveEdit, revokeSensitiveEdit, changeAdminPassword, denyCompanyWithReason, holdCompanyWithReason, revokeCompanyAccess } from '../api';
-import { config as appConfig } from '../config/env';
+import { getBaseUrl } from '../utils/apiUrl';
 // Sidebar, header, and footer provided by AdminLayout wrapper
 
 function GrantSensitiveEditButton({ company, $isDarkMode, onNotify }) {
@@ -215,7 +215,7 @@ const AdminPortal = ({ $isDarkMode }) => {
     }
 
     const headers = { "x-auth-token": token };
-    const baseUrl = (import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '');
+    const baseUrl = getBaseUrl();
 
     setIsLoading(true);
     axios
@@ -275,7 +275,7 @@ const AdminPortal = ({ $isDarkMode }) => {
     if (!isAuthenticated) return;
     const token = localStorage.getItem('adminToken');
     const headers = { 'x-auth-token': token };
-    const baseUrl = (import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '');
+    const baseUrl = getBaseUrl();
     const params = new URLSearchParams({ status: 'hold', q: filters.q || '', sort: filters.sort || 'updatedAt', order: filters.order || 'desc' }).toString();
     axios.get(`${baseUrl}/api/admin/companies?${params}`, { headers }).then(r => setHoldCompanies(r.data)).catch(()=>{});
     const paramsDenied = new URLSearchParams({ status: 'denied', q: filters.q || '', sort: filters.sort || 'updatedAt', order: filters.order || 'desc' }).toString();
@@ -299,7 +299,7 @@ const AdminPortal = ({ $isDarkMode }) => {
     try {
       const token = localStorage.getItem("adminToken");
       await axios.post(
-        `${(import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '')}/api/admin/approve-company/${companyId}`,
+        `${getBaseUrl()}/api/admin/approve-company/${companyId}`,
         {},
         { headers: { "x-auth-token": token } }
       );
@@ -322,7 +322,7 @@ const AdminPortal = ({ $isDarkMode }) => {
     try {
       const token = localStorage.getItem("adminToken");
       await axios.post(
-        `${(import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '')}/api/admin/approve-company/${companyId}`,
+        `${getBaseUrl()}/api/admin/approve-company/${companyId}`,
         {},
         { headers: { "x-auth-token": token } }
       );
@@ -350,7 +350,7 @@ const AdminPortal = ({ $isDarkMode }) => {
       }
       
       const response = await axios.get(
-        `${(import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '')}/api/admin/approved-companies`,
+        `${getBaseUrl()}/api/admin/approved-companies`,
         {
           headers: {
             "x-auth-token": authToken
@@ -366,7 +366,7 @@ const AdminPortal = ({ $isDarkMode }) => {
           const authToken = token || localStorage.getItem("adminToken");
           if (!authToken) return;
           const fallback = await axios.get(
-            `${(import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '')}/api/admin/companies?status=approved`,
+            `${getBaseUrl()}/api/admin/companies?status=approved`,
             { headers: { "x-auth-token": authToken } }
           );
           // Filter defensively: approved true & not hold/denied
@@ -386,7 +386,7 @@ const AdminPortal = ({ $isDarkMode }) => {
       const token = localStorage.getItem("adminToken");
       
       await axios.post(
-        `${(import.meta.env.VITE_API_URL || appConfig.API_URL || '').replace(/\/api$/, '')}/api/admin/approve-company/${companyId}`,
+        `${getBaseUrl()}/api/admin/approve-company/${companyId}`,
         {},
         {
           headers: {
