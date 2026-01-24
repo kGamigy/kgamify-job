@@ -1,6 +1,18 @@
 // Environment configuration
+const host = typeof window !== 'undefined' ? window.location.host : '';
+
+// Map frontends to the correct backend base URL
+const HOST_API_MAP = {
+  'kgamify-job.onrender.com': 'kgamify-job.onrender.com/api',
+  'kgamify-job-portal.vercel.app': 'https://job-portal-backend-629b.onrender.com/api',
+  'localhost:5173': 'http://localhost:5000/api',
+  'localhost:3000': 'http://localhost:5000/api'
+};
+
+const resolvedApiUrl = import.meta.env.VITE_API_URL || HOST_API_MAP[host] || 'https://job-portal-backend-629b.onrender.com/api';
+
 export const config = {
-  API_URL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://kgamify-job.onrender.com/api'),
+  API_URL: resolvedApiUrl,
   AI_API_URL: import.meta.env.VITE_AI_API_URL || 'http://localhost:8000',
   NODE_ENV: import.meta.env.MODE,
   IS_DEVELOPMENT: import.meta.env.DEV,
