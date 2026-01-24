@@ -14,7 +14,7 @@
     "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist node_modules/.vite",
-    "start": "npm run build && npm run preview",
+    "start": "npm run preview",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

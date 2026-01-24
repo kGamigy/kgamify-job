@@ -4,7 +4,7 @@
  */
 class EmailService {
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
     this.templates = new Map();
     this.loadEmailTemplates();
   }
