@@ -54,7 +54,9 @@ export default defineConfig({
     reportCompressedSize: true,
   },
   preview: {
-    port: 3000,
+    port: process.env.PORT || 3000,
+    host: true,
+    allowedHosts: ['kgamify-job.onrender.com', 'kgamify-job-portal.vercel.app'],
   },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
