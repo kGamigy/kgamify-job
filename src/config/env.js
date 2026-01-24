@@ -3,7 +3,7 @@ const host = typeof window !== 'undefined' ? window.location.host : '';
 
 // Map frontends to the correct backend base URL
 const HOST_API_MAP = {
-  'kgamify-job.onrender.com': 'kgamify-job.onrender.com/api',
+  'kgamify-job.onrender.com': '/api',  // Same origin backend
   'kgamify-job-portal.vercel.app': 'https://job-portal-backend-629b.onrender.com/api',
   'localhost:5173': 'http://localhost:5000/api',
   'localhost:3000': 'http://localhost:5000/api'
