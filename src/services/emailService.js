@@ -2,9 +2,11 @@
  * Email Service for Application Management
  * Handles email notifications for job application status updates
  */
+import { getApiUrl } from '../utils/apiUrl';
+
 class EmailService {
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+    this.apiBaseUrl = getApiUrl();
     this.templates = new Map();
     this.loadEmailTemplates();
   }

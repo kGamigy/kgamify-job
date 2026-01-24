@@ -1,15 +1,13 @@
 import axios from 'axios';
-import { config as appConfig } from '../config/env';
+import { getApiUrl } from '../utils/apiUrl';
 
 /**
  * API Client with Request/Response Interceptors
  * Comprehensive API layer with error handling, retry logic, caching, and rate limiting
  */
 
-// Base configuration
-// In production (deployed on same origin), use relative /api paths.
-// In development, use env var or fallback to localhost.
-const API_BASE_URL = import.meta.env.VITE_API_URL || appConfig.API_URL || (import.meta.env.PROD ? '/api' : 'https://kgamify-job.onrender.com/api');
+// Base configuration: always resolve to explicit backend URL
+const API_BASE_URL = getApiUrl();
 // Increase default timeout to better handle cold starts and file uploads
 const DEFAULT_TIMEOUT = 30000;
 const MAX_RETRY_ATTEMPTS = 3;

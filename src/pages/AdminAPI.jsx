@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { FaKey, FaPlus, FaTrash, FaCopy, FaCheck, FaToggleOn, FaToggleOff, FaSync } from 'react-icons/fa';
+import { getApiUrl } from '../utils/apiUrl';
 
 export default function AdminAPI({ isDarkMode = false }) {
   const [apiKeys, setApiKeys] = useState([]);
@@ -11,7 +12,7 @@ export default function AdminAPI({ isDarkMode = false }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const API_URL = getApiUrl();
 
   useEffect(() => {
     fetchApiKeys();
