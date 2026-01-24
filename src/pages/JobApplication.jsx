@@ -173,6 +173,7 @@ const JobApplication = () => {
       minimal.append('email', formData.email);
       minimal.append('phone', formData.phone);
       minimal.append('coverLetter', formData.coverLetter);
+      minimal.append('appName', 'kGamify Web'); // Track application source
       if (formData.resume) minimal.append('resume', formData.resume);
 
       const res = await apiClient.post('/application', minimal, {

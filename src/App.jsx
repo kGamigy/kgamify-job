@@ -43,6 +43,7 @@ const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Support = lazy(() => import("./pages/Support"));
 const CancellationsRefunds = lazy(() => import("./pages/CancellationsRefunds"));
+const AdminAPI = lazy(() => import("./pages/AdminAPI"));
 
 function AppContent() {
   const location = useLocation();
@@ -344,6 +345,10 @@ function AppContent() {
                     <Route
                       path="/admin/jobs/:companyId"
                       element={<AdminLayout isDarkMode={isDarkMode} $isDarkMode={isDarkMode} onThemeToggle={handleThemeToggle}><AdminJobs isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></AdminLayout>}
+                    />
+                    <Route
+                      path="/admin/api"
+                      element={<AdminLayout isDarkMode={isDarkMode} $isDarkMode={isDarkMode} onThemeToggle={handleThemeToggle}><AdminAPI isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></AdminLayout>}
                     />
                     <Route
                       path="/admin/profile"

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { FaBuilding, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaBuilding, FaUser, FaSignOutAlt, FaKey } from 'react-icons/fa';
 import Klogo from '../assets/KLOGO.png';
 
 function AdminSidebar({ isDarkMode = false, isOpen: initialOpen = true, variant = 'panel', onNavigate }) {
@@ -111,6 +111,7 @@ function AdminSidebar({ isDarkMode = false, isOpen: initialOpen = true, variant 
           )}
         </div>
         {/* Jobs link removed per latest requirement */}
+        <Item to="/admin/api" icon={FaKey} label="API Control" />
         <Item to="/admin/profile" icon={FaUser} label="My Profile" />
       </nav>
       {/* Move logout above divider for quicker access */}
