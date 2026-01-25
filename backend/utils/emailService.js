@@ -7,7 +7,7 @@ const axios = require('axios');
 const createTransporter = () => {
   // Prefer explicit SMTP host/port if provided, fallback to Gmail service
   if (process.env.SMTP_HOST) {
-    return nodemailer.createTransport({
+    const config = {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false') === 'true',
@@ -20,12 +20,18 @@ const createTransporter = () => {
       auth: {
         user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
         pass: process.env.SMTP_PASSWORD,
-      },
-      logger: process.env.NODE_ENV !== 'production'
-    });
+      }
+    };
+    
+    // Always enable logger for debugging (especially important in production)
+    if (process.env.NODE_ENV !== 'production') {
+      config.logger = true;
+    }
+    
+    return nodemailer.createTransport(config);
   }
 
-  return nodemailer.createTransport({
+  const config = {
     service: 'gmail', // Using Gmail SMTP
     pool: true,
     maxConnections: 2,
@@ -36,9 +42,14 @@ const createTransporter = () => {
     auth: {
       user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
       pass: process.env.SMTP_PASSWORD, // App password (not regular password)
-    },
-    logger: process.env.NODE_ENV !== 'production'
-  });
+    }
+  };
+  
+  if (process.env.NODE_ENV !== 'production') {
+    config.logger = true;
+  }
+  
+  return nodemailer.createTransport(config);
 };
 
 // Core layout wrapper to ensure all emails share consistent, professional styling and disclaimers
@@ -441,14 +452,16 @@ const sendEmail = async (to, template, data) => {
       throw new Error(`Unknown email template: ${template}`);
     }
     
-    // Log SMTP config for debugging
+    // Log SMTP config for debugging (with redaction of password)
     console.log('[emailService] Sending email to:', to);
     console.log('[emailService] SMTP Config:', {
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_HOST: process.env.SMTP_HOST || 'gmail',
+      SMTP_PORT: process.env.SMTP_PORT || 587,
       SMTP_EMAIL: process.env.SMTP_EMAIL,
-      SMTP_SECURE: process.env.SMTP_SECURE,
-      hasPassword: !!process.env.SMTP_PASSWORD
+      SMTP_SECURE: process.env.SMTP_SECURE || 'false',
+      hasPassword: !!process.env.SMTP_PASSWORD,
+      nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
     });
     
     // Decide logo strategy and optionally embed as CID
@@ -504,17 +517,28 @@ const sendEmail = async (to, template, data) => {
     };
 
   const result = await transporter.sendMail(mailOptions);
-    console.log('[emailService] Email sent successfully. MessageId:', result.messageId);
+    console.log('[emailService] Email sent successfully. MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('[emailService] Email send failed:', {
+    // Extract detailed error info for debugging
+    const errorDetails = {
       to,
       template,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      command: error.command,
+      timestamp: new Date().toISOString()
+    };
+    console.error('[emailService] Email send failed:', errorDetails);
+    
+    // Return detailed error for frontend debugging
+    return { 
+      success: false, 
       error: error.message,
       code: error.code,
-      response: error.response
-    });
-    return { success: false, error: error.message };
+      details: errorDetails
+    };
   }
 };
 

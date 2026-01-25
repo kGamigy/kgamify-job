@@ -53,10 +53,16 @@ router.post('/register-basic', async (req, res) => {
     await company.save();
 
     // Send OTP email (reuse existing otp template)
-    sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' })
-      .then(r => console.log('[register-basic] Email send result:', r))
-      .catch(e => console.error('[register-basic] Email send failed:', e));
-    return res.status(201).json({ message: 'Account created. Verify OTP sent to email.' });
+    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' });
+    if (!emailResult.success) {
+      console.error('[register-basic] Email send failed:', emailResult.error);
+      // Still allow registration but warn client about email delivery
+    }
+    return res.status(201).json({ 
+      message: 'Account created. Verify OTP sent to email.',
+      emailSent: emailResult.success,
+      emailError: !emailResult.success ? emailResult.error : undefined
+    });
   } catch (err) {
     console.error('register-basic error:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -97,10 +103,16 @@ router.post('/resend-signup-otp', async (req, res) => {
     company.emailVerificationCode = generateOtp();
     company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await company.save({ validateModifiedOnly: true });
-    sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' })
-      .then(r => console.log('[resend-signup-otp] Email send result:', r))
-      .catch(e => console.error('[resend-signup-otp] Email send failed:', e));
-    return res.json({ message: 'OTP resent' });
+    
+    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' });
+    if (!emailResult.success) {
+      console.error('[resend-signup-otp] Email send failed:', emailResult.error);
+    }
+    return res.json({ 
+      message: 'OTP resent',
+      emailSent: emailResult.success,
+      emailError: !emailResult.success ? emailResult.error : undefined
+    });
   } catch (err) {
     console.error('resend-signup-otp error:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -129,17 +141,21 @@ router.post('/login', async (req, res) => {
       company.emailVerificationCode = generateOtp();
       company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
       await company.save({ validateModifiedOnly: true });
-      sendEmail(company.email, 'otp', {
+      
+      const emailResult = await sendEmail(company.email, 'otp', {
         code: company.emailVerificationCode,
         expiresInMinutes: 10,
         companyName: company.companyName,
         context: 'verify'
-      })
-      .then(r => console.log('[login] Email send result:', r))
-      .catch(err => console.error('Login verification email send failed:', err));
+      });
+      if (!emailResult.success) {
+        console.error('[login] Email send failed:', emailResult.error);
+      }
       return res.status(403).json({
         error: 'Email not verified. OTP sent to your email.',
-        requireEmailVerification: true
+        requireEmailVerification: true,
+        emailSent: emailResult.success,
+        emailError: !emailResult.success ? emailResult.error : undefined
       });
     }
 
