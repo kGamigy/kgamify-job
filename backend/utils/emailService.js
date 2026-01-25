@@ -7,7 +7,8 @@ const axios = require('axios');
 let smtpTransporter = null;
 
 const createTransporter = (forceProvider = null) => {
-  const provider = forceProvider || process.env.SMTP_PROVIDER || 'hostinger'; // 'hostinger' or 'gmail'
+  // Default to Hostinger (paid service)
+  const provider = forceProvider || process.env.SMTP_PROVIDER || 'hostinger';
   
   // Try Hostinger if configured and not explicitly disabled
   if ((provider === 'hostinger' || !forceProvider) && process.env.SMTP_HOST) {
@@ -627,7 +628,36 @@ module.exports = {
   sendEmail,
   sendBulkEmails,
   sendVerificationEmail,
-  emailTemplates
+  emailTemplates,
+  testSmtpConnection: async () => {
+    try {
+      const transporter = createTransporter();
+      console.log('[SMTP Test] Attempting to verify SMTP connection...');
+      console.log('[SMTP Test] Config:', {
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_PORT: process.env.SMTP_PORT,
+        SMTP_EMAIL: process.env.SMTP_EMAIL,
+        SMTP_SECURE: process.env.SMTP_SECURE
+      });
+      
+      const verified = await transporter.verify();
+      console.log('[SMTP Test] Connection verified successfully!', verified);
+      return { success: true, message: 'SMTP connection verified' };
+    } catch (error) {
+      console.error('[SMTP Test] Connection failed:', {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+        command: error.command
+      });
+      return { 
+        success: false, 
+        error: error.message,
+        code: error.code,
+        command: error.command
+      };
+    }
+  }
 };
 
 // Additional helper emails for subscription lifecycle (reminders & expiry)

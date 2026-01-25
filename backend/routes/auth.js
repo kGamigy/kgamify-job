@@ -5,13 +5,39 @@ const jwt = require('jsonwebtoken');
 const Company = require('../models/Company');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const { sendEmail } = require('../utils/emailService');
+const { sendEmail, testSmtpConnection } = require('../utils/emailService');
 // Basic signup email verification OTP uses dedicated fields on Company model
 
 // Helper to generate 6-digit codes
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+// Diagnostic endpoint: test SMTP connection from Render environment
+router.get('/test-smtp', async (req, res) => {
+  try {
+    console.log('[test-smtp] Starting SMTP connection test...');
+    const result = await testSmtpConnection();
+    return res.json({
+      ...result,
+      timestamp: new Date().toISOString(),
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_PORT: process.env.SMTP_PORT,
+        SMTP_EMAIL: process.env.SMTP_EMAIL,
+        hasPassword: !!process.env.SMTP_PASSWORD
+      }
+    });
+  } catch (error) {
+    console.error('[test-smtp] Error during test:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // Public route: basic account creation (phase 1 signup)
 // Accepts: companyName, email, phone, password, confirmPassword (validated client-side), optional referral
