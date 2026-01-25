@@ -3,10 +3,14 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-// SMTP Configuration
-const createTransporter = () => {
-  // Prefer explicit SMTP host/port if provided, fallback to Gmail service
-  if (process.env.SMTP_HOST) {
+// SMTP Configuration with dual provider strategy
+let smtpTransporter = null;
+
+const createTransporter = (forceProvider = null) => {
+  const provider = forceProvider || process.env.SMTP_PROVIDER || 'hostinger'; // 'hostinger' or 'gmail'
+  
+  // Try Hostinger if configured and not explicitly disabled
+  if ((provider === 'hostinger' || !forceProvider) && process.env.SMTP_HOST) {
     const config = {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
@@ -14,23 +18,31 @@ const createTransporter = () => {
       pool: true,
       maxConnections: 2,
       maxMessages: 100,
-      connectionTimeout: 15000,
-      socketTimeout: 15000,
-      greetingTimeout: 8000,
+      // Increased timeouts for Render → Hostinger (can be slow)
+      connectionTimeout: 30000, // 30s connection timeout
+      socketTimeout: 30000,      // 30s socket timeout
+      greetingTimeout: 12000,    // 12s greeting timeout
       auth: {
         user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
         pass: process.env.SMTP_PASSWORD,
       }
     };
     
-    // Always enable logger for debugging (especially important in production)
     if (process.env.NODE_ENV !== 'production') {
       config.logger = true;
     }
     
+    console.log('[emailService:transporter] Creating Hostinger transporter', {
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      timeouts: { connectionTimeout: config.connectionTimeout, socketTimeout: config.socketTimeout }
+    });
+    
     return nodemailer.createTransport(config);
   }
 
+  // Fallback to Gmail
+  console.log('[emailService:transporter] Creating Gmail transporter as fallback');
   const config = {
     service: 'gmail', // Using Gmail SMTP
     pool: true,
@@ -446,8 +458,8 @@ const getStatusColor = (status) => {
 
 // Main email sending function
 const sendEmail = async (to, template, data) => {
+const sendEmail = async (to, template, data) => {
   try {
-    const transporter = createTransporter();
     if (!emailTemplates[template]) {
       throw new Error(`Unknown email template: ${template}`);
     }
@@ -465,15 +477,15 @@ const sendEmail = async (to, template, data) => {
     });
     
     // Decide logo strategy and optionally embed as CID
-  const attachments = [];
-  const { logoSrc, embed } = await resolveLogo();
+    const attachments = [];
+    const { logoSrc, embed } = await resolveLogo();
     if (embed) {
       // try reading local image file first
       const candidates = [
         path.resolve(__dirname, '../../src/assets/KLOGO.png'),
         path.resolve(__dirname, '../../public/KLOGO.png')
       ];
-  let content = null;
+      let content = null;
       for (const p of candidates) {
         try {
           if (fs.existsSync(p)) {
@@ -487,23 +499,14 @@ const sendEmail = async (to, template, data) => {
         }
       }
       if (content) {
-        // Dev diagnostic (disabled to satisfy lint rules)
-        // if (process.env.NODE_ENV !== 'production') {
-        //   console.info('[emailService] Embedding logo via CID from path:', chosen);
-        // }
         attachments.push({ filename: 'KLOGO.png', content, cid: 'brandlogo@kgamify', contentType: 'image/png', contentDisposition: 'inline' });
       } else {
-        // fallback: let nodemailer fetch and embed from a URL
         const fallbackFrontend = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-        // Dev diagnostic (disabled to satisfy lint rules)
-        // if (process.env.NODE_ENV !== 'production') {
-        //   console.info('[emailService] Embedding logo via remote URL fallback:', `${fallbackFrontend}/KLOGO.png`);
-        // }
         attachments.push({ filename: 'KLOGO.png', path: `${fallbackFrontend}/KLOGO.png`, cid: 'brandlogo@kgamify', contentType: 'image/png', contentDisposition: 'inline' });
       }
     }
 
-  const emailContent = emailTemplates[template]({ ...data, logoSrc });
+    const emailContent = emailTemplates[template]({ ...data, logoSrc });
 
     const mailOptions = {
       from: {
@@ -516,9 +519,42 @@ const sendEmail = async (to, template, data) => {
       attachments: attachments.length ? attachments : undefined
     };
 
-  const result = await transporter.sendMail(mailOptions);
-    console.log('[emailService] Email sent successfully. MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
-    return { success: true, messageId: result.messageId };
+    // Try primary transporter (Hostinger or configured SMTP)
+    try {
+      const transporter = createTransporter();
+      const result = await transporter.sendMail(mailOptions);
+      console.log('[emailService] Email sent successfully via primary transporter. MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
+      return { success: true, messageId: result.messageId, provider: 'primary' };
+    } catch (primaryError) {
+      // Log primary failure
+      console.warn('[emailService] Primary transporter failed:', {
+        code: primaryError.code,
+        message: primaryError.message,
+        timestamp: new Date().toISOString()
+      });
+
+      // If primary failed and it's Hostinger (SMTP_HOST is set), try Gmail fallback
+      if (process.env.SMTP_HOST) {
+        console.log('[emailService] Attempting fallback to Gmail transporter...');
+        try {
+          const fallbackTransporter = createTransporter('gmail');
+          const result = await fallbackTransporter.sendMail(mailOptions);
+          console.log('[emailService] Email sent successfully via fallback (Gmail). MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
+          return { success: true, messageId: result.messageId, provider: 'fallback-gmail' };
+        } catch (fallbackError) {
+          console.error('[emailService] Fallback transporter also failed:', {
+            code: fallbackError.code,
+            message: fallbackError.message,
+            timestamp: new Date().toISOString()
+          });
+          // If both fail, throw the primary error
+          throw primaryError;
+        }
+      } else {
+        // No Hostinger config, just throw the error
+        throw primaryError;
+      }
+    }
   } catch (error) {
     // Extract detailed error info for debugging
     const errorDetails = {
@@ -530,7 +566,7 @@ const sendEmail = async (to, template, data) => {
       command: error.command,
       timestamp: new Date().toISOString()
     };
-    console.error('[emailService] Email send failed:', errorDetails);
+    console.error('[emailService] Email send failed (all providers exhausted):', errorDetails);
     
     // Return detailed error for frontend debugging
     return { 
