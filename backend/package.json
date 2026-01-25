@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "cd backend && npm start",
     "dev": "nodemon server.js",
-    "build": "cd backend && npm run build",
+    "build": "npm run build",
     "email:test": "node scripts/testEmail.js",
     "fix-indexes": "node scripts/fixIndexes.js"
   },
