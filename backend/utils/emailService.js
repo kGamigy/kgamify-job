@@ -629,39 +629,34 @@ const sendVerificationEmail = async (email, verificationToken) => {
   return await sendEmail(email, 'custom', emailContent);
 };
 
-module.exports = {
-  sendEmail,
-  sendBulkEmails,
-  sendVerificationEmail,
-  emailTemplates,
-  testSmtpConnection: async () => {
-    try {
-      const transporter = createTransporter();
-      console.log('[SMTP Test] Attempting to verify SMTP connection...');
-      console.log('[SMTP Test] Config:', {
-        SMTP_HOST: process.env.SMTP_HOST,
-        SMTP_PORT: process.env.SMTP_PORT,
-        SMTP_EMAIL: process.env.SMTP_EMAIL,
-        SMTP_SECURE: process.env.SMTP_SECURE
-      });
-      
-      const verified = await transporter.verify();
-      console.log('[SMTP Test] Connection verified successfully!', verified);
-      return { success: true, message: 'SMTP connection verified' };
-    } catch (error) {
-      console.error('[SMTP Test] Connection failed:', {
-        message: error.message,
-        code: error.code,
-        response: error.response,
-        command: error.command
-      });
-      return { 
-        success: false, 
-        error: error.message,
-        code: error.code,
-        command: error.command
-      };
-    }
+// SMTP connection test utility
+const testSmtpConnection = async () => {
+  try {
+    const transporter = createTransporter();
+    console.log('[SMTP Test] Attempting to verify SMTP connection...');
+    console.log('[SMTP Test] Config:', {
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_EMAIL: process.env.SMTP_EMAIL,
+      SMTP_SECURE: process.env.SMTP_SECURE
+    });
+    
+    const verified = await transporter.verify();
+    console.log('[SMTP Test] Connection verified successfully!', verified);
+    return { success: true, message: 'SMTP connection verified' };
+  } catch (error) {
+    console.error('[SMTP Test] Connection failed:', {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      command: error.command
+    });
+    return { 
+      success: false, 
+      error: error.message,
+      code: error.code,
+      command: error.command
+    };
   }
 };
 
@@ -707,5 +702,12 @@ async function sendSubscriptionExpiredEmail(email, { companyName, previousPlan }
   return sendEmail(email, 'custom', emailContent);
 }
 
-module.exports.sendSubscriptionReminderEmail = sendSubscriptionReminderEmail;
-module.exports.sendSubscriptionExpiredEmail = sendSubscriptionExpiredEmail;
+module.exports = {
+  sendEmail,
+  sendBulkEmails,
+  sendVerificationEmail,
+  emailTemplates,
+  testSmtpConnection,
+  sendSubscriptionReminderEmail,
+  sendSubscriptionExpiredEmail
+};
