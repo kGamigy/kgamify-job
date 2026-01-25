@@ -53,7 +53,8 @@ router.post('/register-basic', async (req, res) => {
     await company.save();
 
     // Send OTP email (reuse existing otp template)
-  sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' });
+    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' });
+    console.log('[register-basic] Email send result:', emailResult);
     return res.status(201).json({ message: 'Account created. Verify OTP sent to email.' });
   } catch (err) {
     console.error('register-basic error:', err);
@@ -95,7 +96,8 @@ router.post('/resend-signup-otp', async (req, res) => {
     company.emailVerificationCode = generateOtp();
     company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await company.save({ validateModifiedOnly: true });
-  sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' });
+    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' });
+    console.log('[resend-signup-otp] Email send result:', emailResult);
     return res.json({ message: 'OTP resent' });
   } catch (err) {
     console.error('resend-signup-otp error:', err);

@@ -426,6 +426,17 @@ const sendEmail = async (to, template, data) => {
     if (!emailTemplates[template]) {
       throw new Error(`Unknown email template: ${template}`);
     }
+    
+    // Log SMTP config for debugging
+    console.log('[emailService] Sending email to:', to);
+    console.log('[emailService] SMTP Config:', {
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_EMAIL: process.env.SMTP_EMAIL,
+      SMTP_SECURE: process.env.SMTP_SECURE,
+      hasPassword: !!process.env.SMTP_PASSWORD
+    });
+    
     // Decide logo strategy and optionally embed as CID
   const attachments = [];
   const { logoSrc, embed } = await resolveLogo();
@@ -479,8 +490,16 @@ const sendEmail = async (to, template, data) => {
     };
 
   const result = await transporter.sendMail(mailOptions);
+    console.log('[emailService] Email sent successfully. MessageId:', result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
+    console.error('[emailService] Email send failed:', {
+      to,
+      template,
+      error: error.message,
+      code: error.code,
+      response: error.response
+    });
     return { success: false, error: error.message };
   }
 };
