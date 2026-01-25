@@ -53,8 +53,9 @@ router.post('/register-basic', async (req, res) => {
     await company.save();
 
     // Send OTP email (reuse existing otp template)
-    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' });
-    console.log('[register-basic] Email send result:', emailResult);
+    sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName, context: 'verify' })
+      .then(r => console.log('[register-basic] Email send result:', r))
+      .catch(e => console.error('[register-basic] Email send failed:', e));
     return res.status(201).json({ message: 'Account created. Verify OTP sent to email.' });
   } catch (err) {
     console.error('register-basic error:', err);
@@ -96,8 +97,9 @@ router.post('/resend-signup-otp', async (req, res) => {
     company.emailVerificationCode = generateOtp();
     company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await company.save({ validateModifiedOnly: true });
-    const emailResult = await sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' });
-    console.log('[resend-signup-otp] Email send result:', emailResult);
+    sendEmail(email, 'otp', { code: company.emailVerificationCode, expiresInMinutes: 10, companyName: company.companyName, context: 'verify' })
+      .then(r => console.log('[resend-signup-otp] Email send result:', r))
+      .catch(e => console.error('[resend-signup-otp] Email send failed:', e));
     return res.json({ message: 'OTP resent' });
   } catch (err) {
     console.error('resend-signup-otp error:', err);
@@ -127,16 +129,14 @@ router.post('/login', async (req, res) => {
       company.emailVerificationCode = generateOtp();
       company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
       await company.save({ validateModifiedOnly: true });
-      try {
-        await sendEmail(company.email, 'otp', {
-          code: company.emailVerificationCode,
-          expiresInMinutes: 10,
-          companyName: company.companyName,
-          context: 'verify'
-        });
-      } catch (err) {
-        console.error('Login verification email send failed:', err);
-      }
+      sendEmail(company.email, 'otp', {
+        code: company.emailVerificationCode,
+        expiresInMinutes: 10,
+        companyName: company.companyName,
+        context: 'verify'
+      })
+      .then(r => console.log('[login] Email send result:', r))
+      .catch(err => console.error('Login verification email send failed:', err));
       return res.status(403).json({
         error: 'Email not verified. OTP sent to your email.',
         requireEmailVerification: true

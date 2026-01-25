@@ -1,6 +1,5 @@
 import { apiClient } from './apiClient';
 import { emailService } from './emailService';
-import { skillMatchingService } from './skillMatchingService';
 
 /**
  * Application Management Service
@@ -21,6 +20,9 @@ class ApplicationService {
     try {
       const { jobId, candidateId, resume, coverLetter, additionalInfo } = applicationData;
       
+      // Lazy-load heavy skill matching service to avoid initial bundle bloat
+      const { skillMatchingService } = await import('./skillMatchingService');
+
       // Parse resume if provided
       let parsedResume = null;
       if (resume) {

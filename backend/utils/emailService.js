@@ -11,19 +11,33 @@ const createTransporter = () => {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false') === 'true',
+      pool: true,
+      maxConnections: 2,
+      maxMessages: 100,
+      connectionTimeout: 15000,
+      socketTimeout: 15000,
+      greetingTimeout: 8000,
       auth: {
         user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
         pass: process.env.SMTP_PASSWORD,
       },
+      logger: process.env.NODE_ENV !== 'production'
     });
   }
 
   return nodemailer.createTransport({
     service: 'gmail', // Using Gmail SMTP
+    pool: true,
+    maxConnections: 2,
+    maxMessages: 100,
+    connectionTimeout: 15000,
+    socketTimeout: 15000,
+    greetingTimeout: 8000,
     auth: {
       user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
       pass: process.env.SMTP_PASSWORD, // App password (not regular password)
     },
+    logger: process.env.NODE_ENV !== 'production'
   });
 };
 
