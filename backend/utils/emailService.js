@@ -464,7 +464,6 @@ const getStatusColor = (status) => {
 
 // Main email sending function
 const sendEmail = async (to, template, data) => {
-const sendEmail = async (to, template, data) => {
   try {
     if (!emailTemplates[template]) {
       throw new Error(`Unknown email template: ${template}`);
