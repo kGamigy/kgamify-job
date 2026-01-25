@@ -19,13 +19,18 @@ const createTransporter = (forceProvider = null) => {
       pool: true,
       maxConnections: 2,
       maxMessages: 100,
-      // Increased timeouts for Render → Hostinger (can be slow)
-      connectionTimeout: 30000, // 30s connection timeout
-      socketTimeout: 30000,      // 30s socket timeout
-      greetingTimeout: 12000,    // 12s greeting timeout
+      // Increased timeouts for Render → Hostinger (can be slow or blocked)
+      connectionTimeout: 45000, // 45s connection timeout (increased from 30s)
+      socketTimeout: 45000,      // 45s socket timeout
+      greetingTimeout: 15000,    // 15s greeting timeout
       auth: {
         user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
         pass: process.env.SMTP_PASSWORD,
+      },
+      // Try to be more lenient with TLS
+      tls: {
+        rejectUnauthorized: false, // Accept self-signed certs (some cloud envs need this)
+        minVersion: 'TLSv1.2'
       }
     };
     
