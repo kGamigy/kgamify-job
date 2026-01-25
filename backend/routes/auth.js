@@ -119,7 +119,28 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
+
+    // If email not verified, send OTP and block login until verified
+    if (!company.emailVerified) {
+      company.emailVerificationCode = generateOtp();
+      company.emailVerificationExpiry = new Date(Date.now() + 10 * 60 * 1000);
+      await company.save({ validateModifiedOnly: true });
+      try {
+        await sendEmail(company.email, 'otp', {
+          code: company.emailVerificationCode,
+          expiresInMinutes: 10,
+          companyName: company.companyName,
+          context: 'verify'
+        });
+      } catch (err) {
+        console.error('Login verification email send failed:', err);
+      }
+      return res.status(403).json({
+        error: 'Email not verified. OTP sent to your email.',
+        requireEmailVerification: true
+      });
+    }
+
     // Create JWT token
     const token = jwt.sign({ user: { id: company._id, email: company.email } }, process.env.JWT_SECRET, {
       expiresIn: '1d',
