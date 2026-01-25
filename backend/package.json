@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
+    "start": "cd backend && npm start",
     "dev": "nodemon server.js",
-    "build": "echo 'Build step complete'",
+    "build": "cd backend && npm run build",
     "email:test": "node scripts/testEmail.js",
     "fix-indexes": "node scripts/fixIndexes.js"
   },
