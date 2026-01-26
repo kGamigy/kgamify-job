@@ -1,73 +1,31 @@
-const nodemailer = require('nodemailer');
+const FormData = require('form-data');
+const Mailgun = require('mailgun.js');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 
-// SMTP Configuration with dual provider strategy
-let smtpTransporter = null;
-
-const createTransporter = (forceProvider = null) => {
-  // Default to Hostinger (paid service)
-  const provider = forceProvider || process.env.SMTP_PROVIDER || 'hostinger';
+// Mailgun Configuration
+const createMailgunClient = () => {
+  const apiKey = process.env.MAILGUN_API_KEY;
+  const domain = process.env.MAILGUN_DOMAIN;
   
-  // Try Hostinger if configured and not explicitly disabled
-  if ((provider === 'hostinger' || !forceProvider) && process.env.SMTP_HOST) {
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: String(process.env.SMTP_SECURE || 'false') === 'true',
-      pool: true,
-      maxConnections: 2,
-      maxMessages: 100,
-      // Increased timeouts for Render → Hostinger (can be slow or blocked)
-      connectionTimeout: 45000, // 45s connection timeout (increased from 30s)
-      socketTimeout: 45000,      // 45s socket timeout
-      greetingTimeout: 15000,    // 15s greeting timeout
-      auth: {
-        user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
-        pass: process.env.SMTP_PASSWORD,
-      },
-      // Try to be more lenient with TLS
-      tls: {
-        rejectUnauthorized: false, // Accept self-signed certs (some cloud envs need this)
-        minVersion: 'TLSv1.2'
-      }
-    };
-    
-    if (process.env.NODE_ENV !== 'production') {
-      config.logger = true;
-    }
-    
-    console.log('[emailService:transporter] Creating Hostinger transporter', {
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      timeouts: { connectionTimeout: config.connectionTimeout, socketTimeout: config.socketTimeout }
-    });
-    
-    return nodemailer.createTransport(config);
+  if (!apiKey || !domain) {
+    console.error('[emailService:mailgun] Missing Mailgun configuration. Please set MAILGUN_API_KEY and MAILGUN_DOMAIN environment variables.');
   }
-
-  // Fallback to Gmail
-  console.log('[emailService:transporter] Creating Gmail transporter as fallback');
-  const config = {
-    service: 'gmail', // Using Gmail SMTP
-    pool: true,
-    maxConnections: 2,
-    maxMessages: 100,
-    connectionTimeout: 15000,
-    socketTimeout: 15000,
-    greetingTimeout: 8000,
-    auth: {
-      user: process.env.SMTP_EMAIL || 'natheprasad17@gmail.com',
-      pass: process.env.SMTP_PASSWORD, // App password (not regular password)
-    }
+  
+  console.log('[emailService:mailgun] Initializing Mailgun client', {
+    domain,
+    hasApiKey: !!apiKey,
+    timestamp: new Date().toISOString()
+  });
+  
+  return {
+    client: mailgun.client({
+      username: 'api',
+      key: apiKey,
+      url: process.env.MAILGUN_URL || 'https://api.mailgun.net'
+    }),
+    domain
   };
-  
-  if (process.env.NODE_ENV !== 'production') {
-    config.logger = true;
-  }
-  
-  return nodemailer.createTransport(config);
 };
 
 // Core layout wrapper to ensure all emails share consistent, professional styling and disclaimers
@@ -462,122 +420,59 @@ const getStatusColor = (status) => {
   return colors[status.toLowerCase()] || '#6b7280';
 };
 
-// Main email sending function
+// Main email sending function using Mailgun
 const sendEmail = async (to, template, data) => {
   try {
     if (!emailTemplates[template]) {
       throw new Error(`Unknown email template: ${template}`);
     }
     
-    // Log SMTP config for debugging (with redaction of password)
+    // Log email send attempt
     console.log('[emailService] Sending email to:', to);
-    console.log('[emailService] SMTP Config:', {
-      SMTP_HOST: process.env.SMTP_HOST || 'gmail',
-      SMTP_PORT: process.env.SMTP_PORT || 587,
-      SMTP_EMAIL: process.env.SMTP_EMAIL,
-      SMTP_SECURE: process.env.SMTP_SECURE || 'false',
-      hasPassword: !!process.env.SMTP_PASSWORD,
+    console.log('[emailService] Mailgun Config:', {
+      MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || 'sandbox58accba1f1594720a5f9a39420e89671.mailgun.org',
+      hasApiKey: !!process.env.MAILGUN_API_KEY,
       nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
     
-    // Decide logo strategy and optionally embed as CID
-    const attachments = [];
-    const { logoSrc, embed } = await resolveLogo();
-    if (embed) {
-      // try reading local image file first
-      const candidates = [
-        path.resolve(__dirname, '../../src/assets/KLOGO.png'),
-        path.resolve(__dirname, '../../public/KLOGO.png')
-      ];
-      let content = null;
-      for (const p of candidates) {
-        try {
-          if (fs.existsSync(p)) {
-            content = fs.readFileSync(p);
-            break;
-          }
-        } catch {
-          if (process.env.NODE_ENV !== 'production') {
-            // ignore read errors
-          }
-        }
-      }
-      if (content) {
-        attachments.push({ filename: 'KLOGO.png', content, cid: 'brandlogo@kgamify', contentType: 'image/png', contentDisposition: 'inline' });
-      } else {
-        const fallbackFrontend = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-        attachments.push({ filename: 'KLOGO.png', path: `${fallbackFrontend}/KLOGO.png`, cid: 'brandlogo@kgamify', contentType: 'image/png', contentDisposition: 'inline' });
-      }
-    }
-
+    // Get logo
+    const { logoSrc } = await resolveLogo();
     const emailContent = emailTemplates[template]({ ...data, logoSrc });
 
-    const mailOptions = {
-      from: {
-        name: 'kGamify Job Portal',
-        address: process.env.SMTP_EMAIL,
-      },
-      to,
+    // Initialize Mailgun client
+    const { client: mg, domain } = createMailgunClient();
+    
+    // Prepare email data for Mailgun
+    const mailgunData = {
+      from: process.env.MAILGUN_FROM || `kGamify Job Portal <postmaster@${domain}>`,
+      to: Array.isArray(to) ? to : [to],
       subject: emailContent.subject,
-      html: emailContent.html,
-      attachments: attachments.length ? attachments : undefined
+      html: emailContent.html
     };
 
-    // Try primary transporter (Hostinger or configured SMTP)
-    try {
-      const transporter = createTransporter();
-      const result = await transporter.sendMail(mailOptions);
-      console.log('[emailService] Email sent successfully via primary transporter. MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
-      return { success: true, messageId: result.messageId, provider: 'primary' };
-    } catch (primaryError) {
-      // Log primary failure
-      console.warn('[emailService] Primary transporter failed:', {
-        code: primaryError.code,
-        message: primaryError.message,
-        timestamp: new Date().toISOString()
-      });
-
-      // If primary failed and it's Hostinger (SMTP_HOST is set), try Gmail fallback
-      if (process.env.SMTP_HOST) {
-        console.log('[emailService] Attempting fallback to Gmail transporter...');
-        try {
-          const fallbackTransporter = createTransporter('gmail');
-          const result = await fallbackTransporter.sendMail(mailOptions);
-          console.log('[emailService] Email sent successfully via fallback (Gmail). MessageId:', result.messageId, 'timestamp:', new Date().toISOString());
-          return { success: true, messageId: result.messageId, provider: 'fallback-gmail' };
-        } catch (fallbackError) {
-          console.error('[emailService] Fallback transporter also failed:', {
-            code: fallbackError.code,
-            message: fallbackError.message,
-            timestamp: new Date().toISOString()
-          });
-          // If both fail, throw the primary error
-          throw primaryError;
-        }
-      } else {
-        // No Hostinger config, just throw the error
-        throw primaryError;
-      }
-    }
+    // Send via Mailgun
+    const result = await mg.messages.create(domain, mailgunData);
+    console.log('[emailService] Email sent successfully via Mailgun. MessageId:', result.id, 'timestamp:', new Date().toISOString());
+    return { success: true, messageId: result.id, provider: 'mailgun' };
+    
   } catch (error) {
     // Extract detailed error info for debugging
     const errorDetails = {
       to,
       template,
       message: error.message,
-      code: error.code,
-      response: error.response,
-      command: error.command,
+      status: error.status,
+      details: error.details,
       timestamp: new Date().toISOString()
     };
-    console.error('[emailService] Email send failed (all providers exhausted):', errorDetails);
+    console.error('[emailService] Email send failed:', errorDetails);
     
     // Return detailed error for frontend debugging
     return { 
       success: false, 
       error: error.message,
-      code: error.code,
+      code: error.status,
       details: errorDetails
     };
   }
@@ -629,32 +524,40 @@ const sendVerificationEmail = async (email, verificationToken) => {
 };
 
 // SMTP connection test utility
+// SMTP/Mailgun connection test utility
 const testSmtpConnection = async () => {
   try {
-    const transporter = createTransporter();
-    console.log('[SMTP Test] Attempting to verify SMTP connection...');
-    console.log('[SMTP Test] Config:', {
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      SMTP_EMAIL: process.env.SMTP_EMAIL,
-      SMTP_SECURE: process.env.SMTP_SECURE
+    console.log('[Mailgun Test] Attempting to verify Mailgun connection...');
+    const { client: mg, domain } = createMailgunClient();
+    console.log('[Mailgun Test] Config:', {
+      MAILGUN_DOMAIN: domain,
+      hasApiKey: !!process.env.MAILGUN_API_KEY,
+      url: process.env.MAILGUN_URL || 'https://api.mailgun.net'
     });
     
-    const verified = await transporter.verify();
-    console.log('[SMTP Test] Connection verified successfully!', verified);
-    return { success: true, message: 'SMTP connection verified' };
+    // Test by getting domain info (validates API key and domain)
+    const domainInfo = await mg.domains.get(domain);
+    console.log('[Mailgun Test] Connection verified successfully!', {
+      domain: domainInfo.name,
+      state: domainInfo.state
+    });
+    return { 
+      success: true, 
+      message: 'Mailgun connection verified',
+      domain: domainInfo.name,
+      state: domainInfo.state
+    };
   } catch (error) {
-    console.error('[SMTP Test] Connection failed:', {
+    console.error('[Mailgun Test] Connection failed:', {
       message: error.message,
-      code: error.code,
-      response: error.response,
-      command: error.command
+      status: error.status,
+      details: error.details
     });
     return { 
       success: false, 
       error: error.message,
-      code: error.code,
-      command: error.command
+      status: error.status,
+      details: error.details
     };
   }
 };
