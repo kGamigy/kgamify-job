@@ -18,6 +18,7 @@ const createMailgunClient = () => {
     timestamp: new Date().toISOString()
   });
   
+  const mailgun = new Mailgun(FormData);
   return {
     client: mailgun.client({
       username: 'api',
