@@ -28,45 +28,52 @@ export const registerCompany = async (formData) => {
 
 export const loginCompany = async (loginData) => {
   try {
+    // Ensure payload has 'identifier' field for backend compatibility
+    const payload = {
+      identifier: loginData.identifier || loginData.email,
+      password: loginData.password
+    };
     
-    // Add a pre-flight check to verify CORS is working
-    try {
-      await axios.get(`${API_URL.replace('/api', '')}/api/cors-test`);
-    } catch {
-      // Continue with login attempt anyway
+    if (!payload.identifier || !payload.password) {
+      throw { error: 'Email and password are required' };
     }
     
-    // Support username or email via 'identifier'
-    const payload = loginData.identifier
-      ? loginData
-      : (loginData.email ? { identifier: loginData.email, password: loginData.password } : loginData);
-  const response = await apiClient.post('/companies/login', payload);
+    const response = await apiClient.post('/companies/login', payload);
     
-    // Store the company type in localStorage
-    if (response.data.success) {
-      localStorage.setItem('companyType', response.data.type);
-      
-      // Also store the company data in localStorage for easier access
+    // Only process successful responses
+    if (response.status !== 200) {
+      throw response.data || { error: 'Login failed' };
+    }
+    
+    // Store the company data and token
+    if (response.data.token) {
+      localStorage.setItem('companyToken', response.data.token);
+    }
+    if (response.data.company) {
       localStorage.setItem('companyData', JSON.stringify(response.data.company));
-      if (response.data.token) {
-        localStorage.setItem('companyToken', response.data.token);
-      }
+      localStorage.setItem('companyType', response.data.company.companyType || 'company');
     }
+    
     return response.data;
   } catch (error) {
+    // Handle network errors
     if (error.code === 'ERR_NETWORK') {
-      throw { error: 'Network error. Please check your connection or try again later.' };
+      throw { error: 'Network error. Please check your connection and try again.' };
     }
     
-    // Continue with existing error handling
+    // Handle specific HTTP status codes
     if (error.response?.status === 403) {
-      throw { error: 'Your company is not approved by Admin yet' };
+      throw error.response.data || { error: 'Your email is not verified' };
     } else if (error.response?.status === 401) {
-      throw { error: 'Invalid credentials' };
+      throw { error: 'Invalid email or password' };
+    } else if (error.response?.status === 404) {
+      throw { error: 'Company not found. Please register first.' };
     } else if (error.response?.status === 400) {
-      throw { error: error.response.data.error || 'Bad request' };
+      throw error.response.data || { error: 'Invalid request' };
+    } else if (error.response?.status >= 500) {
+      throw { error: 'Server error. Please try again later.' };
     } else {
-      throw error.response?.data || { error: "An unknown error occurred" };
+      throw error.response?.data || { error: 'An error occurred during login' };
     }
   }
 };

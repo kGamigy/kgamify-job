@@ -148,10 +148,17 @@ router.post('/resend-signup-otp', async (req, res) => {
 
 // Basic authentication route - can be extended with actual authentication
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, identifier } = req.body;
   
   try {
-    const company = await Company.findOne({ email });
+    // Support both 'email' and 'identifier' fields
+    const loginEmail = identifier || email;
+    
+    if (!loginEmail || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    const company = await Company.findOne({ email: loginEmail });
     if (!company) {
       return res.status(404).json({ error: 'Company not found' });
     }
@@ -187,16 +194,25 @@ router.post('/login', async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign({ user: { id: company._id, email: company.email } }, process.env.JWT_SECRET, {
-      expiresIn: '1d',
+      expiresIn: '7d',
     });
     
     // Remove password from response
     const companySafe = company.toObject();
     delete companySafe.password;
     
-    res.json({ token, company: companySafe });
-  } catch {
-    res.status(500).json({ error: 'Server error' });
+    res.json({ 
+      success: true,
+      token, 
+      company: companySafe,
+      message: 'Login successful'
+    });
+  } catch (error) {
+    console.error('[login] Error:', error.message);
+    res.status(500).json({ 
+      error: 'Server error during login',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
