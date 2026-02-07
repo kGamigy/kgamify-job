@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setSubscription } from '../store/slices/subscriptionSlice';
 import extractSubscriptionSnapshot from '../utils/subscriptionSnapshot';
@@ -336,7 +337,10 @@ export default function Plans({ isDarkMode = false }) {
           <div className={`mt-4 rounded-xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-5`}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg font-semibold">Subscription Snapshot</h4>
-              <span className="text-sm opacity-80">Plan: <strong>{planMeta.plan}</strong>{planMeta.endsAt && ` • Ends: ${planMeta.endsAt.toISOString().slice(0,10)}`}</span>
+              <div className="flex items-center gap-3 text-sm opacity-80">
+                <span>Plan: <strong>{planMeta.plan}</strong>{planMeta.endsAt && ` • Ends: ${planMeta.endsAt.toISOString().slice(0,10)}`}</span>
+                <Link to="/subscription" className="underline text-[#ff8200]">Open full snapshot</Link>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>

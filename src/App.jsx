@@ -37,6 +37,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Applications = lazy(() => import("./pages/Applications"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Plans = lazy(() => import("./pages/Plans"));
+const SubscriptionSnapshot = lazy(() => import("./pages/SubscriptionSnapshot"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
@@ -367,6 +368,7 @@ function AppContent() {
                       element={<JobApplication $isDarkMode={isDarkMode} />}
                     />
                     <Route path="/plans" element={<RequireCompanyAuth><Plans isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></RequireCompanyAuth>} />
+                    <Route path="/subscription" element={<RequireCompanyAuth><SubscriptionSnapshot isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></RequireCompanyAuth>} />
                   </Routes>
                 </Suspense>
               </div>

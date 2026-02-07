@@ -1,32 +1,28 @@
-const FormData = require('form-data');
-const Mailgun = require('mailgun.js');
+const sgMail = require('@sendgrid/mail');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-// Mailgun Configuration
-const createMailgunClient = () => {
-  const apiKey = process.env.MAILGUN_API_KEY;
-  const domain = process.env.MAILGUN_DOMAIN;
-  
-  if (!apiKey || !domain) {
-    console.error('[emailService:mailgun] Missing Mailgun configuration. Please set MAILGUN_API_KEY and MAILGUN_DOMAIN environment variables.');
+// SendGrid Configuration
+const createSendGridClient = () => {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  const from = process.env.SENDGRID_FROM;
+
+  if (!apiKey || !from) {
+    console.error('[emailService:sendgrid] Missing SendGrid configuration. Please set SENDGRID_API_KEY and SENDGRID_FROM environment variables.');
   }
-  
-  console.log('[emailService:mailgun] Initializing Mailgun client', {
-    domain,
+
+  console.log('[emailService:sendgrid] Initializing SendGrid client', {
+    from,
     hasApiKey: !!apiKey,
     timestamp: new Date().toISOString()
   });
-  
-  const mailgun = new Mailgun(FormData);
-  return {
-    client: mailgun.client({
-      username: 'api',
-      key: apiKey,
-      url: process.env.MAILGUN_URL || 'https://api.mailgun.net'
-    }),
-    domain
-  };
+
+  if (apiKey) {
+    sgMail.setApiKey(apiKey);
+  }
+
+  return { client: sgMail, from };
 };
 
 // Core layout wrapper to ensure all emails share consistent, professional styling and disclaimers
@@ -421,7 +417,7 @@ const getStatusColor = (status) => {
   return colors[status.toLowerCase()] || '#6b7280';
 };
 
-// Main email sending function using Mailgun
+// Main email sending function using SendGrid
 const sendEmail = async (to, template, data) => {
   try {
     if (!emailTemplates[template]) {
@@ -430,9 +426,9 @@ const sendEmail = async (to, template, data) => {
     
     // Log email send attempt
     console.log('[emailService] Sending email to:', to);
-    console.log('[emailService] Mailgun Config:', {
-      MAILGUN_DOMAIN: process.env.MAILGUN_DOMAIN || 'sandbox58accba1f1594720a5f9a39420e89671.mailgun.org',
-      hasApiKey: !!process.env.MAILGUN_API_KEY,
+    console.log('[emailService] SendGrid Config:', {
+      SENDGRID_FROM: process.env.SENDGRID_FROM || '',
+      hasApiKey: !!process.env.SENDGRID_API_KEY,
       nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
@@ -441,21 +437,23 @@ const sendEmail = async (to, template, data) => {
     const { logoSrc } = await resolveLogo();
     const emailContent = emailTemplates[template]({ ...data, logoSrc });
 
-    // Initialize Mailgun client
-    const { client: mg, domain } = createMailgunClient();
-    
-    // Prepare email data for Mailgun
-    const mailgunData = {
-      from: process.env.MAILGUN_FROM || `kGamify Job Portal <postmaster@${domain}>`,
+    // Initialize SendGrid client
+    const { client: sg, from } = createSendGridClient();
+    if (!process.env.SENDGRID_API_KEY || !from) {
+      throw new Error('SendGrid configuration missing. Set SENDGRID_API_KEY and SENDGRID_FROM.');
+    }
+
+    const msg = {
+      from,
       to: Array.isArray(to) ? to : [to],
       subject: emailContent.subject,
       html: emailContent.html
     };
 
-    // Send via Mailgun
-    const result = await mg.messages.create(domain, mailgunData);
-    console.log('[emailService] Email sent successfully via Mailgun. MessageId:', result.id, 'timestamp:', new Date().toISOString());
-    return { success: true, messageId: result.id, provider: 'mailgun' };
+    const result = await sg.send(msg);
+    const messageId = result?.[0]?.headers?.['x-message-id'] || result?.[0]?.headers?.['x-message-id'.toLowerCase()] || 'unknown';
+    console.log('[emailService] Email sent successfully via SendGrid. MessageId:', messageId, 'timestamp:', new Date().toISOString());
+    return { success: true, messageId, provider: 'sendgrid' };
     
   } catch (error) {
     // Extract detailed error info for debugging
@@ -524,42 +522,46 @@ const sendVerificationEmail = async (email, verificationToken) => {
   return await sendEmail(email, 'custom', emailContent);
 };
 
-// SMTP connection test utility
-// SMTP/Mailgun connection test utility
+// SendGrid connection test utility
 const testSmtpConnection = async () => {
   try {
-    console.log('[Mailgun Test] Attempting to verify Mailgun connection...');
-    const { client: mg, domain } = createMailgunClient();
-    console.log('[Mailgun Test] Config:', {
-      MAILGUN_DOMAIN: domain,
-      hasApiKey: !!process.env.MAILGUN_API_KEY,
-      url: process.env.MAILGUN_URL || 'https://api.mailgun.net'
+    const apiKey = process.env.SENDGRID_API_KEY;
+    const from = process.env.SENDGRID_FROM;
+    console.log('[SendGrid Test] Attempting to verify SendGrid connection...');
+    console.log('[SendGrid Test] Config:', {
+      from,
+      hasApiKey: !!apiKey
     });
-    
-    // Test by getting domain info (validates API key and domain)
-    const domainInfo = await mg.domains.get(domain);
-    console.log('[Mailgun Test] Connection verified successfully!', {
-      domain: domainInfo.name,
-      state: domainInfo.state
+    if (!apiKey || !from) {
+      return { success: false, error: 'SendGrid config missing', details: { hasApiKey: !!apiKey, from } };
+    }
+
+    const profile = await new Promise((resolve, reject) => {
+      const req = https.request({
+        method: 'GET',
+        hostname: 'api.sendgrid.com',
+        path: '/v3/user/profile',
+        headers: { Authorization: `Bearer ${apiKey}` }
+      }, res => {
+        let data = '';
+        res.on('data', chunk => { data += chunk; });
+        res.on('end', () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try { resolve(JSON.parse(data)); } catch { resolve({}); }
+          } else {
+            reject(new Error(`SendGrid API error: ${res.statusCode} ${data}`));
+          }
+        });
+      });
+      req.on('error', reject);
+      req.end();
     });
-    return { 
-      success: true, 
-      message: 'Mailgun connection verified',
-      domain: domainInfo.name,
-      state: domainInfo.state
-    };
+
+    console.log('[SendGrid Test] Connection verified successfully!', { username: profile?.username || 'unknown' });
+    return { success: true, message: 'SendGrid connection verified', profile: { username: profile?.username || 'unknown' } };
   } catch (error) {
-    console.error('[Mailgun Test] Connection failed:', {
-      message: error.message,
-      status: error.status,
-      details: error.details
-    });
-    return { 
-      success: false, 
-      error: error.message,
-      status: error.status,
-      details: error.details
-    };
+    console.error('[SendGrid Test] Connection failed:', { message: error.message });
+    return { success: false, error: error.message };
   }
 };
 

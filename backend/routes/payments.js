@@ -20,6 +20,28 @@ function getRazorpay() {
 // Pricing map aligned with new plan ids (INR). Free handled separately.
 const PLAN_PRICING = { free: 0, paid3m: 1, paid6m: 1, paid12m: 1 };
 
+function appendSubscriptionHistory(company, { plan, startedAt, endsAt, amount, currency, invoiceId, paymentId, orderId, provider }) {
+  if (!company) return false;
+  company.subscriptionHistory = company.subscriptionHistory || [];
+  const exists = company.subscriptionHistory.some(h =>
+    (paymentId && h.paymentId === paymentId) || (orderId && h.orderId === orderId)
+  );
+  if (exists) return false;
+  company.subscriptionHistory.push({
+    plan,
+    status: 'active',
+    startAt: startedAt,
+    endAt: endsAt,
+    invoiceId,
+    amount,
+    currency,
+    paymentId,
+    orderId,
+    paymentProvider: provider
+  });
+  return true;
+}
+
 // GET /api/payments/config -> publishable key for frontend
 router.get('/config', (req, res) => {
   res.json({ keyId: process.env.RAZORPAY_KEY_ID || '' });
@@ -87,8 +109,22 @@ router.post('/verify', async (req, res) => {
         company.subscriptionStartedAt = startedAt;
         company.subscriptionEndsAt = endsAt;
         company.subscriptionJobLimit = getPlan(plan).jobLimit;
+        const amount = PLAN_PRICING[plan];
+        const currency = 'INR';
+        const invoiceId = `INV-${Date.now()}-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+        appendSubscriptionHistory(company, {
+          plan,
+          startedAt,
+          endsAt,
+          amount,
+          currency,
+          invoiceId,
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          provider: 'razorpay'
+        });
         await company.save({ validateModifiedOnly: true });
-        const amountFormatted = PLAN_PRICING[plan] === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(PLAN_PRICING[plan]);
+        const amountFormatted = amount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency}).format(amount);
         // Fire-and-forget confirmation email
         sendEmail(company.email, 'custom', {
           subject: 'Subscription Activated',
@@ -141,8 +177,22 @@ async function webhookHandler(req, res) {
           company.subscriptionStartedAt = startedAt;
           company.subscriptionEndsAt = endsAt;
           company.subscriptionJobLimit = getPlan(plan).jobLimit;
+          const amount = PLAN_PRICING[plan];
+          const currency = 'INR';
+          const invoiceId = `INV-${Date.now()}-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+          appendSubscriptionHistory(company, {
+            plan,
+            startedAt,
+            endsAt,
+            amount,
+            currency,
+            invoiceId,
+            paymentId: payment?.id,
+            orderId: order?.id || payment?.order_id,
+            provider: 'razorpay'
+          });
           await company.save({ validateModifiedOnly: true });
-          const amountFormatted = PLAN_PRICING[plan] === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(PLAN_PRICING[plan]);
+          const amountFormatted = amount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency}).format(amount);
           sendEmail(company.email, 'custom', {
             subject: 'Subscription Activated (Webhook)',
             html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">

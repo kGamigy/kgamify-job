@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TextField,
@@ -52,6 +52,7 @@ const jobCategories = [
 export default function PostJob({ isDarkMode, email, userCompany }) {
   // Add email prop
   const navigate = useNavigate();
+  const [submitError, setSubmitError] = useState('');
   const [formData, setFormData] = useState({
     jobTitle: "",
     jobDescription: "",
@@ -88,6 +89,23 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
       }));
     }
   }, [email]);
+
+  const blockers = useMemo(() => {
+    const issues = [];
+    if (!userCompany) return issues;
+    if (userCompany.status === 'hold') issues.push('Your account is on hold. Check Messages for details.');
+    if (userCompany.status === 'denied') issues.push('Your account has been denied. Contact support.');
+    if (userCompany.approved === false) issues.push('Your account is not approved yet.');
+    if (userCompany.emailVerified === false) issues.push('Verify your email before posting jobs.');
+    if (userCompany.profileCompleted === false) issues.push('Complete your company profile before posting jobs.');
+    if (userCompany.subscriptionEndsAt && new Date(userCompany.subscriptionEndsAt) < new Date()) {
+      issues.push('Your subscription has expired. Upgrade to post jobs.');
+    }
+    if (planMeta && typeof planMeta.remaining === 'number' && planMeta.remaining <= 0) {
+      issues.push('Job post limit reached for your plan. Upgrade or deactivate existing jobs.');
+    }
+    return issues;
+  }, [userCompany, planMeta]);
 
   // Cities selection not used currently
   const [openSnackbar, setOpenSnackbar] = useState(false); // State for Snackbar
@@ -170,6 +188,7 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
         headers['Content-Type'] = 'application/json';
       }
 
+      setSubmitError('');
       await createJob(payload, { headers });
       setOpenSnackbar(true);
 
@@ -177,8 +196,9 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
       setTimeout(() => {
         navigate("/job-posted");
       }, 2000);
-  } catch {
-      // Silent
+  } catch (err) {
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message;
+      setSubmitError(serverMsg || err?.message || 'Job posting failed');
     }
   };
 
@@ -195,10 +215,15 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
         isDarkMode ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white" : "bg-gradient-to-br from-orange-50 via-white to-orange-100 text-black"
       }`}
     >
-      {(userCompany?.status === 'hold' || userCompany?.status === 'pending') && (
-        <div className={`w-full max-w-3xl mx-auto mb-6 p-4 rounded border ${userCompany.status === 'hold' ? 'bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-200 dark:border-yellow-700' : 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-700'}`}>
+      {blockers.length > 0 && (
+        <div className={`w-full max-w-3xl mx-auto mb-6 p-4 rounded border ${isDarkMode ? 'bg-yellow-900/20 border-yellow-700 text-yellow-200' : 'bg-yellow-50 border-yellow-200 text-yellow-900'}`}>
           <div className="font-semibold mb-1">Posting disabled</div>
-          <div className="text-sm">Your account is {userCompany.status}. You can edit registration, but posting is disabled. See <a href="/messages" className="underline text-[#ff8200]">Messages</a>.</div>
+          <ul className="text-sm list-disc pl-5 space-y-1">
+            {blockers.map((msg, idx) => (
+              <li key={`${msg}-${idx}`}>{msg}</li>
+            ))}
+          </ul>
+          <div className="text-sm mt-2">See <a href="/messages" className="underline text-[#ff8200]">Messages</a> for admin notes.</div>
         </div>
       )}
       <div
@@ -212,6 +237,11 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
           <h1 className="text-3xl sm:text-4xl font-extrabold text-center tracking-tight bg-gradient-to-r from-[#ff8200] to-[#ffb347] bg-clip-text text-transparent drop-shadow-lg">
             Create a Job Post
           </h1>
+          {submitError && (
+            <div className={`w-full mt-2 p-3 rounded text-sm border ${isDarkMode ? 'bg-red-900/30 border-red-800 text-red-200' : 'bg-red-50 border-red-200 text-red-700'}`}>
+              {submitError}
+            </div>
+          )}
           {planMeta && (
             <div className="flex items-center gap-4 text-xs font-medium">
               <div className="relative flex items-center justify-center" style={{ width: 54, height: 54 }}>

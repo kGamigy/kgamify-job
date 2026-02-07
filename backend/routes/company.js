@@ -155,6 +155,17 @@ router.post('/login', async (req, res) => {
     // Create a copy of the company object without the password
     const companySafe = company.toObject();
     delete companySafe.password;
+
+    // Backfill missing subscription dates from history (response-only)
+    if ((!companySafe.subscriptionStartedAt || !companySafe.subscriptionEndsAt) && Array.isArray(companySafe.subscriptionHistory)) {
+      const active = companySafe.subscriptionHistory
+        .filter(h => h && h.status === 'active')
+        .sort((a, b) => new Date(b.startAt || 0).getTime() - new Date(a.startAt || 0).getTime());
+      if (active.length) {
+        companySafe.subscriptionStartedAt = companySafe.subscriptionStartedAt || active[0].startAt || null;
+        companySafe.subscriptionEndsAt = companySafe.subscriptionEndsAt || active[0].endAt || null;
+      }
+    }
     
     // Create a JWT for company session (lightweight auth for messaging)
     const token = jwt.sign({ companyId: company._id, email: company.email }, process.env.JWT_SECRET || 'temporarysecret', { expiresIn: '8h' });
@@ -737,16 +748,33 @@ router.get('/subscription/history', async (req, res) => {
   try {
     const { email } = req.query;
     if (!email) return res.status(400).json({ error: 'email required' });
-    const company = await Company.findOne({ email }, { subscriptionHistory: 1, subscriptionPlan: 1, subscriptionStatus: 1, subscriptionActivatedAt: 1, subscriptionExpiresAt: 1, activeJobCount: 1, companyName: 1 });
+    const company = await Company.findOne(
+      { email },
+      {
+        subscriptionHistory: 1,
+        subscriptionPlan: 1,
+        subscriptionStartedAt: 1,
+        subscriptionEndsAt: 1,
+        subscriptionJobLimit: 1,
+        downgradedFromPlan: 1,
+        subscriptionStatus: 1,
+        subscriptionActivatedAt: 1,
+        subscriptionExpiresAt: 1,
+        activeJobCount: 1,
+        companyName: 1
+      }
+    );
     if (!company) return res.status(404).json({ error: 'Company not found' });
     return res.json({
       company: {
         name: company.companyName,
         email,
         plan: company.subscriptionPlan,
-        status: company.subscriptionStatus,
-        activatedAt: company.subscriptionActivatedAt,
-        expiresAt: company.subscriptionExpiresAt,
+        status: company.subscriptionStatus || (company.subscriptionPlan && company.subscriptionPlan !== 'free' ? 'active' : 'free'),
+        startAt: company.subscriptionStartedAt || company.subscriptionActivatedAt || null,
+        endAt: company.subscriptionEndsAt || company.subscriptionExpiresAt || null,
+        jobLimit: typeof company.subscriptionJobLimit === 'number' ? company.subscriptionJobLimit : (PLAN_LIMITS[company.subscriptionPlan || 'free'] || 0),
+        downgradedFromPlan: company.downgradedFromPlan || null,
         activeJobCount: company.activeJobCount,
         planLimit: PLAN_LIMITS[company.subscriptionPlan || 'free'] || 0
       },
