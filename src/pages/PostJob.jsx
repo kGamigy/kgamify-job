@@ -211,7 +211,7 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center py-8 px-2 sm:px-6 lg:px-8 ${
+      className={`min-h-screen flex flex-col items-center justify-center py-8 px-2 sm:px-6 lg:px-8 ${
         isDarkMode ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white" : "bg-gradient-to-br from-orange-50 via-white to-orange-100 text-black"
       }`}
     >
