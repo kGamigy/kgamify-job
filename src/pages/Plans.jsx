@@ -25,7 +25,7 @@ const PLAN_DEFINITIONS = {
   paid3m: {
     id: 'paid3m',
     title: '3 Months',
-    price: '₹1,499',
+    price: '₹1',
     duration: '90 days',
     limit: 15,
     features: [
@@ -38,7 +38,7 @@ const PLAN_DEFINITIONS = {
   paid6m: {
     id: 'paid6m',
     title: '6 Months',
-    price: '₹2,799',
+    price: '₹1',
     duration: '180 days',
     limit: 20,
     features: [
@@ -51,7 +51,7 @@ const PLAN_DEFINITIONS = {
   paid12m: {
     id: 'paid12m',
     title: '12 Months',
-    price: '₹4,999',
+    price: '₹1',
     duration: '365 days',
     limit: 30,
     features: [

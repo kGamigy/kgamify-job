@@ -9,7 +9,7 @@ const { sendEmail } = require('../utils/emailService');
 // New unified plan config (durations & limits) imported from config
 const { plans, getPlan, computeSubscriptionDates } = require('../config/plans');
 const PLAN_LIMITS = { free: plans.free.jobLimit, paid3m: plans.paid3m.jobLimit, paid6m: plans.paid6m.jobLimit, paid12m: plans.paid12m.jobLimit };
-const PLAN_PRICING = { free: 0, paid3m: 1499, paid6m: 2799, paid12m: 4999 }; // INR pricing
+const PLAN_PRICING = { free: 0, paid3m: 1, paid6m: 1, paid12m: 1 }; // INR pricing
 // Messaging additions
 
 // Middleware to authenticate company

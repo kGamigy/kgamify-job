@@ -18,7 +18,7 @@ function getRazorpay() {
 }
 
 // Pricing map aligned with new plan ids (INR). Free handled separately.
-const PLAN_PRICING = { free: 0, paid3m: 1499, paid6m: 2799, paid12m: 4999 };
+const PLAN_PRICING = { free: 0, paid3m: 1, paid6m: 1, paid12m: 1 };
 
 // GET /api/payments/config -> publishable key for frontend
 router.get('/config', (req, res) => {
