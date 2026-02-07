@@ -10,6 +10,15 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
   const [loading, setLoading] = useState(true);
   const email = company?.email;
   const { planMeta, refreshPlanMeta } = usePlanMeta(email || null);
+  const PLAN_DURATIONS = { paid3m: 90, paid6m: 180, paid12m: 365 };
+  const computedEndsAt = planMeta?.endsAt
+    ? planMeta.endsAt
+    : (planMeta?.started && PLAN_DURATIONS[planMeta.plan])
+      ? new Date(planMeta.started.getTime() + PLAN_DURATIONS[planMeta.plan] * 24 * 60 * 60 * 1000)
+      : null;
+  const daysRemaining = computedEndsAt
+    ? Math.max(0, Math.ceil((computedEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   useEffect(() => {
     try {
@@ -65,11 +74,35 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
               </div>
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Ends</div>
-                <div className="font-medium">{planMeta.endsAt ? planMeta.endsAt.toLocaleDateString() : '—'}</div>
+                <div className="font-medium">{computedEndsAt ? computedEndsAt.toLocaleDateString() : '—'}</div>
+                {!planMeta.endsAt && computedEndsAt && (
+                  <div className="text-xs opacity-60 mt-1">Auto-calculated from plan duration</div>
+                )}
               </div>
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Active jobs</div>
                 <div className="font-medium">{planMeta.used} / {planMeta.limit}</div>
+              </div>
+            </div>
+          )}
+
+          {planMeta && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm mt-4">
+              <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <div className="opacity-70">Days remaining</div>
+                <div className="font-medium">{daysRemaining !== null ? `${daysRemaining} day${daysRemaining === 1 ? '' : 's'}` : '—'}</div>
+              </div>
+              <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <div className="opacity-70">Job limit</div>
+                <div className="font-medium">{planMeta.limit}</div>
+              </div>
+              <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <div className="opacity-70">AI Features</div>
+                <div className="font-medium">{planMeta.recommendationsEnabled ? 'Enabled' : 'Paid plans only'}</div>
+              </div>
+              <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <div className="opacity-70">Ads</div>
+                <div className="font-medium">Not used</div>
               </div>
             </div>
           )}
