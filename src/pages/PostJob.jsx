@@ -90,6 +90,9 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
     }
   }, [email]);
 
+  const companyEmail = (userCompany && userCompany.email) || email;
+  const { planMeta } = usePlanMeta(companyEmail);
+
   const blockers = useMemo(() => {
     const issues = [];
     if (!userCompany) return issues;
@@ -112,9 +115,6 @@ export default function PostJob({ isDarkMode, email, userCompany }) {
   const [jdFiles, setJdFiles] = useState([]);
   const [jdError, setJdError] = useState("");
   const [validityError, setValidityError] = useState("");
-  const companyEmail = (userCompany && userCompany.email) || email;
-  const { planMeta } = usePlanMeta(companyEmail);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };

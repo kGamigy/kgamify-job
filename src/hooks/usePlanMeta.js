@@ -34,6 +34,17 @@ function computePlanMeta(company) {
   };
 }
 
+function hydratePlanMeta(meta) {
+  if (!meta || typeof meta !== 'object') return meta;
+  const started = meta.started ? new Date(meta.started) : null;
+  const endsAt = meta.endsAt ? new Date(meta.endsAt) : null;
+  return {
+    ...meta,
+    started: started && !isNaN(started.getTime()) ? started : null,
+    endsAt: endsAt && !isNaN(endsAt.getTime()) ? endsAt : null
+  };
+}
+
 export default function usePlanMeta(email, { auto = true } = {}) {
   const [planMeta, setPlanMeta] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -48,17 +59,19 @@ export default function usePlanMeta(email, { auto = true } = {}) {
     if (!force) {
       const mem = memoryCache.get(emailRef.current);
       if (mem && (now - mem.timestamp) < TTL_MS) {
-        setPlanMeta(mem.planMeta);
-        return mem.planMeta;
+        const hydrated = hydratePlanMeta(mem.planMeta);
+        setPlanMeta(hydrated);
+        return hydrated;
       }
       try {
         const raw = sessionStorage.getItem(key);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && parsed.timestamp && (now - parsed.timestamp) < TTL_MS) {
-            memoryCache.set(emailRef.current, { planMeta: parsed.planMeta, timestamp: parsed.timestamp });
-            setPlanMeta(parsed.planMeta);
-            return parsed.planMeta;
+            const hydrated = hydratePlanMeta(parsed.planMeta);
+            memoryCache.set(emailRef.current, { planMeta: hydrated, timestamp: parsed.timestamp });
+            setPlanMeta(hydrated);
+            return hydrated;
           }
         }
       } catch { /* ignore */ }
