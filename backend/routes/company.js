@@ -664,7 +664,19 @@ router.post('/subscription/purchase', async (req, res) => {
     company.subscriptionJobLimit = cfg.jobLimit;
     await company.save({ validateModifiedOnly: true });
     const amountFormatted = finalAmount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{ style:'currency', currency: finalCurrency }).format(finalAmount);
-    sendEmail(company.email, 'subscriptionInvoice', { invoiceId, plan, startAt: startedAt, endAt: endsAt || startedAt, companyName: company.companyName, companyEmail: company.email, amountFormatted }).catch(()=>{});
+    sendEmail(company.email, 'subscriptionInvoice', {
+      invoiceId,
+      plan,
+      planLabel: cfg.label,
+      startAt: startedAt,
+      endAt: endsAt || startedAt,
+      companyName: company.companyName,
+      companyEmail: company.email,
+      amountFormatted,
+      amount: finalAmount,
+      currency: finalCurrency,
+      jobLimit: cfg.jobLimit
+    }).catch(()=>{});
     return res.json({ message: 'Subscription purchased', invoiceId, plan, startAt: startedAt, endAt: endsAt, amount: finalAmount, currency: finalCurrency, amountFormatted });
   } catch (err) {
     console.error('subscription purchase error:', err);
@@ -699,7 +711,19 @@ router.post('/subscription/repeat', async (req, res) => {
     company.subscriptionJobLimit = cfg.jobLimit;
     await company.save({ validateModifiedOnly: true });
     const amountFormatted = new Intl.NumberFormat('en-IN',{ style:'currency', currency }).format(amount);
-    sendEmail(company.email, 'subscriptionInvoice', { invoiceId, plan: currentPlan, startAt: startedAt, endAt: endsAt, companyName: company.companyName, companyEmail: company.email, amountFormatted }).catch(()=>{});
+    sendEmail(company.email, 'subscriptionInvoice', {
+      invoiceId,
+      plan: currentPlan,
+      planLabel: cfg.label,
+      startAt: startedAt,
+      endAt: endsAt,
+      companyName: company.companyName,
+      companyEmail: company.email,
+      amountFormatted,
+      amount,
+      currency,
+      jobLimit: cfg.jobLimit
+    }).catch(()=>{});
     return res.json({ message: 'Subscription renewed', plan: currentPlan, invoiceId, startAt: startedAt, endAt: endsAt, amount, currency, amountFormatted });
   } catch (err) {
     console.error('subscription repeat error:', err);
@@ -735,7 +759,19 @@ router.post('/subscription/upgrade', async (req, res) => {
     company.subscriptionJobLimit = PLAN_LIMITS[plan];
     await company.save({ validateModifiedOnly: true });
     const amountFormatted = new Intl.NumberFormat('en-IN',{ style:'currency', currency }).format(amount);
-    sendEmail(company.email, 'subscriptionInvoice', { invoiceId, plan, startAt: startedAt, endAt: endsAt, companyName: company.companyName, companyEmail: company.email, amountFormatted }).catch(()=>{});
+    sendEmail(company.email, 'subscriptionInvoice', {
+      invoiceId,
+      plan,
+      planLabel: getPlan(plan).label,
+      startAt: startedAt,
+      endAt: endsAt,
+      companyName: company.companyName,
+      companyEmail: company.email,
+      amountFormatted,
+      amount,
+      currency,
+      jobLimit: getPlan(plan).jobLimit
+    }).catch(()=>{});
     return res.json({ message: 'Subscription upgraded', plan, invoiceId, startAt: startedAt, endAt: endsAt, amount, currency, amountFormatted });
   } catch (err) {
     console.error('subscription upgrade error:', err);
@@ -896,7 +932,19 @@ module.exports.activateSubscription = async function activateSubscription({ emai
   company.subscriptionExpiresAt = endAt;
   await company.save({ validateModifiedOnly: true });
   const amountFormatted = amount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{ style:'currency', currency }).format(amount);
-  sendEmail(company.email, 'subscriptionInvoice', { invoiceId, plan, startAt, endAt: endAt || startAt, companyName: company.companyName, companyEmail: company.email, amountFormatted }).catch(()=>{});
+  sendEmail(company.email, 'subscriptionInvoice', {
+    invoiceId,
+    plan,
+    planLabel: getPlan(plan).label,
+    startAt,
+    endAt: endAt || startAt,
+    companyName: company.companyName,
+    companyEmail: company.email,
+    amountFormatted,
+    amount,
+    currency,
+    jobLimit: getPlan(plan).jobLimit
+  }).catch(()=>{});
   return { success: true, invoiceId, plan, startAt, endAt, origin, paymentId, orderId };
 };
 // Chat-style messaging endpoints appended below for company/admin conversation

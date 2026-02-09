@@ -125,18 +125,18 @@ router.post('/verify', async (req, res) => {
         });
         await company.save({ validateModifiedOnly: true });
         const amountFormatted = amount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency}).format(amount);
-        // Fire-and-forget confirmation email
-        sendEmail(company.email, 'custom', {
-          subject: 'Subscription Activated',
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-            <h2 style="color:#3b82f6;">Subscription Activated</h2>
-            <p><strong>Plan:</strong> ${getPlan(plan).label}</p>
-            <p><strong>Starts:</strong> ${startedAt.toDateString()}</p>
-            <p><strong>Ends:</strong> ${endsAt ? endsAt.toDateString() : 'No Expiry (Free)'} </p>
-            <p><strong>Job Limit:</strong> ${getPlan(plan).jobLimit}</p>
-            <p><strong>Amount:</strong> ${amountFormatted}</p>
-            <p style="margin-top:16px;font-size:14px;color:#555;">Thank you for upgrading. You now have access to all paid features.</p>
-          </div>`
+        sendEmail(company.email, 'subscriptionInvoice', {
+          invoiceId,
+          plan,
+          planLabel: getPlan(plan).label,
+          startAt: startedAt,
+          endAt: endsAt || startedAt,
+          companyName: company.companyName,
+          companyEmail: company.email,
+          amountFormatted,
+          amount,
+          currency,
+          jobLimit: getPlan(plan).jobLimit
         }).catch(()=>{});
       }
     }
@@ -193,16 +193,18 @@ async function webhookHandler(req, res) {
           });
           await company.save({ validateModifiedOnly: true });
           const amountFormatted = amount === 0 ? 'FREE' : new Intl.NumberFormat('en-IN',{style:'currency',currency}).format(amount);
-          sendEmail(company.email, 'custom', {
-            subject: 'Subscription Activated (Webhook)',
-            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-              <h2 style="color:#3b82f6;">Subscription Activated</h2>
-              <p><strong>Plan:</strong> ${getPlan(plan).label}</p>
-              <p><strong>Starts:</strong> ${startedAt.toDateString()}</p>
-              <p><strong>Ends:</strong> ${endsAt ? endsAt.toDateString() : 'No Expiry (Free)'} </p>
-              <p><strong>Job Limit:</strong> ${getPlan(plan).jobLimit}</p>
-              <p><strong>Amount:</strong> ${amountFormatted}</p>
-            </div>`
+          sendEmail(company.email, 'subscriptionInvoice', {
+            invoiceId,
+            plan,
+            planLabel: getPlan(plan).label,
+            startAt: startedAt,
+            endAt: endsAt || startedAt,
+            companyName: company.companyName,
+            companyEmail: company.email,
+            amountFormatted,
+            amount,
+            currency,
+            jobLimit: getPlan(plan).jobLimit
           }).catch(()=>{});
         }
       }

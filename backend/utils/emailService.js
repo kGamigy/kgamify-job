@@ -1,7 +1,9 @@
 const sgMail = require('@sendgrid/mail');
 const https = require('https');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { generateInvoiceHtml, generateInvoicePdfBuffer } = require('./invoiceGenerator');
 
 // SendGrid Configuration
 const createSendGridClient = () => {
@@ -390,16 +392,21 @@ const emailTemplates = {
       preheader: `Your ${data.plan} plan is now active`,
       bodyHtml: `
         <p>Hi ${data.companyName || data.companyEmail || 'there'},</p>
-        <p>Your <strong>${data.plan.toUpperCase()}</strong> subscription has started.</p>
-        <p><strong>Start:</strong> ${new Date(data.startAt).toLocaleString()}<br/>
-        <strong>End:</strong> ${new Date(data.endAt).toLocaleString()}</p>
-        <p style="margin-top:10px;">Invoice ID: <strong>${data.invoiceId}</strong></p>
-        <p style="margin-top:14px;">Amount: <strong>${data.amountFormatted}</strong></p>
-        <div style="margin-top:16px;background:#fff7ed;border:1px solid #fdba74;padding:12px;border-radius:8px;font-size:12px;color:#9a3412;line-height:1.5;">
-          <strong>Important:</strong><br/>
-          • This subscription is <strong>non-refundable</strong>.<br/>
-          • Funds are not returned after activation.<br/>
-          • The subscription is <strong>non-transferable</strong> between companies.<br/>
+        <p>Your <strong>${data.plan.toUpperCase()}</strong> subscription has started. Below are your plan details:</p>
+
+        <div style="background:#fff7ed;border:1px solid #fdba74;padding:16px;border-radius:12px;margin:16px 0;">
+          <p style="margin:0 0 6px 0;"><strong>Plan:</strong> ${data.planLabel || data.plan}</p>
+          <p style="margin:0 0 6px 0;"><strong>Company:</strong> ${data.companyName || data.companyEmail}</p>
+          <p style="margin:0 0 6px 0;"><strong>Starts:</strong> ${new Date(data.startAt).toLocaleDateString()}</p>
+          <p style="margin:0 0 6px 0;"><strong>Ends:</strong> ${new Date(data.endAt).toLocaleDateString()}</p>
+          <p style="margin:0 0 6px 0;"><strong>Job Limit:</strong> ${data.jobLimit || '—'}</p>
+          <p style="margin:0 0 6px 0;"><strong>Invoice ID:</strong> ${data.invoiceId}</p>
+          <p style="margin:0;"><strong>Amount:</strong> ${data.amountFormatted}</p>
+        </div>
+
+        <p style="margin-top:10px;">Your invoice PDF is attached for your records.</p>
+        <div style="margin-top:16px;background:#1e2938;border:1px solid #0f172a;padding:12px;border-radius:8px;font-size:12px;color:#e2e8f0;line-height:1.6;">
+          <strong>Disclaimer:</strong> This is a production-level application. Subscriptions are non-refundable and non-transferable once activated.
         </div>
       `,
       logoSrc: data.logoSrc
@@ -452,6 +459,33 @@ const sendEmail = async (to, template, data) => {
       subject: emailContent.subject,
       html: emailContent.html
     };
+
+    if (template === 'subscriptionInvoice') {
+      try {
+        const invoiceBuffer = await generateInvoicePdfBuffer({
+          invoiceId: data.invoiceId,
+          brand: 'kGamify',
+          companyName: data.companyName,
+          companyEmail: data.companyEmail,
+          plan: data.plan,
+          amount: typeof data.amount === 'number' ? data.amount : undefined,
+          currency: data.currency || 'INR',
+          startAt: data.startAt,
+          endAt: data.endAt,
+          issuedAt: new Date()
+        });
+        msg.attachments = [
+          {
+            content: invoiceBuffer.toString('base64'),
+            filename: `${data.invoiceId || 'invoice'}.pdf`,
+            type: 'application/pdf',
+            disposition: 'attachment'
+          }
+        ];
+      } catch (attachErr) {
+        console.error('[emailService] Failed to build invoice PDF attachment:', attachErr.message);
+      }
+    }
 
     const result = await sg.send(msg);
     const messageId = result?.[0]?.headers?.['x-message-id'] || result?.[0]?.headers?.['x-message-id'.toLowerCase()] || 'unknown';

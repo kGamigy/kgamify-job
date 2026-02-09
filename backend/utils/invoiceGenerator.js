@@ -88,5 +88,58 @@ function generateInvoiceHtml({
     </body>
   </html>`;
 }
+const PDFDocument = require('pdfkit');
 
-module.exports = { generateInvoiceHtml };
+function generateInvoicePdfBuffer({
+  invoiceId,
+  brand = 'kGamify',
+  companyName,
+  companyEmail,
+  plan,
+  amount,
+  currency = 'INR',
+  startAt,
+  endAt,
+  issuedAt = new Date()
+}) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: 'A4', margin: 40 });
+      const chunks = [];
+      doc.on('data', (d) => chunks.push(d));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+      doc.fontSize(20).fillColor('#ff8200').text(`${brand} Subscription Invoice`, { align: 'left' });
+      doc.moveDown(0.5);
+      doc.fontSize(10).fillColor('#6b7280').text(`Invoice ID: ${invoiceId}`);
+      doc.text(`Issued: ${new Date(issuedAt).toLocaleString('en-IN')}`);
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#111827').text('Billed To');
+      doc.fontSize(11).fillColor('#374151').text(companyName || companyEmail || '');
+      if (companyEmail) doc.text(companyEmail);
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#111827').text('Subscription');
+      doc.fontSize(11).fillColor('#374151').text(`Plan: ${String(plan || '').toUpperCase()}`);
+      doc.text(`Period: ${new Date(startAt).toLocaleDateString('en-IN')} - ${endAt ? new Date(endAt).toLocaleDateString('en-IN') : 'N/A'}`);
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#111827').text('Amount');
+      if (typeof amount === 'number') {
+        doc.fontSize(12).fillColor('#ff8200').text(new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount));
+      } else {
+        doc.fontSize(12).fillColor('#ff8200').text('N/A');
+      }
+
+      doc.moveDown();
+      doc.fontSize(10).fillColor('#6b7280').text('Disclaimer: This is a production-level application invoice. Subscriptions are non-refundable and non-transferable.', { width: 520 });
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+module.exports = { generateInvoiceHtml, generateInvoicePdfBuffer };
