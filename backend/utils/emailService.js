@@ -395,14 +395,43 @@ const emailTemplates = {
         <div style="background:#fff7ed;border:1px solid #fdba74;padding:16px;border-radius:12px;margin:16px 0;">
           <p style="margin:0 0 6px 0;"><strong>Plan:</strong> ${data.planLabel || data.plan}</p>
           <p style="margin:0 0 6px 0;"><strong>Company:</strong> ${data.companyName || data.companyEmail}</p>
+          <p style="margin:0 0 6px 0;"><strong>Account:</strong> ${data.companyEmail || '—'}</p>
+          <p style="margin:0 0 6px 0;"><strong>Order Number:</strong> ${data.orderId || '—'}</p>
+          <p style="margin:0 0 6px 0;"><strong>Order Date:</strong> ${data.orderDate ? new Date(data.orderDate).toLocaleString() : new Date().toLocaleString()}</p>
           <p style="margin:0 0 6px 0;"><strong>Starts:</strong> ${new Date(data.startAt).toLocaleDateString()}</p>
           <p style="margin:0 0 6px 0;"><strong>Ends:</strong> ${new Date(data.endAt).toLocaleDateString()}</p>
           <p style="margin:0 0 6px 0;"><strong>Job Limit:</strong> ${data.jobLimit || '—'}</p>
           <p style="margin:0 0 6px 0;"><strong>Invoice ID:</strong> ${data.invoiceId}</p>
           ${data.paymentId ? `<p style="margin:0 0 6px 0;"><strong>Payment ID:</strong> ${data.paymentId}</p>` : ''}
-          ${data.orderId ? `<p style="margin:0 0 6px 0;"><strong>Order ID:</strong> ${data.orderId}</p>` : ''}
+          <p style="margin:0 0 6px 0;"><strong>Payment Method:</strong> ${data.paymentMethod || '—'}</p>
           <p style="margin:0;"><strong>Amount:</strong> ${data.amountFormatted}</p>
         </div>
+
+        <div style="margin:8px 0 14px 0;">
+          <div style="font-weight:600;margin-bottom:6px;">Billing Address</div>
+          <div style="color:#374151;">${data.billingAddress || '—'}</div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:10px;background:#fff7ed;border-bottom:1px solid #e5e7eb;">Item</th>
+              <th style="text-align:left;padding:10px;background:#fff7ed;border-bottom:1px solid #e5e7eb;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:10px;border-bottom:1px solid #e5e7eb;">kGamify - Paid plan</td>
+              <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${data.amountFormatted}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td style="padding:10px;font-weight:600;">Total</td>
+              <td style="padding:10px;font-weight:600;">${data.amountFormatted}</td>
+            </tr>
+          </tfoot>
+        </table>
 
         <div style="margin:10px 0 16px 0;">
           <h3 style="margin:0 0 8px 0;color:#ff8200;">AI Features Unlocked</h3>
@@ -415,7 +444,10 @@ const emailTemplates = {
 
         <p style="margin-top:10px;">Your invoice PDF is attached for your records.</p>
         <div style="margin-top:16px;background:#1e2938;border:1px solid #0f172a;padding:12px;border-radius:8px;font-size:12px;color:#e2e8f0;line-height:1.6;">
-          <strong>Disclaimer:</strong> This is a production‑level application. Subscriptions are non‑refundable and non‑transferable once activated.
+          <strong>Disclaimer:</strong> Subscriptions are non‑refundable and non‑transferable once activated.
+        </div>
+        <div style="margin-top:14px;">
+          <a href="${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/,'')}/support" style="background:#ff8200;color:#ffffff;padding:10px 16px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:600;">Contact Support</a>
         </div>
       `,
       logoSrc: data.logoSrc

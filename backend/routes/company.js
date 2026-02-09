@@ -672,10 +672,13 @@ router.post('/subscription/purchase', async (req, res) => {
       endAt: endsAt || startedAt,
       companyName: company.companyName,
       companyEmail: company.email,
+      billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
+      orderDate: new Date(),
       amountFormatted,
       amount: finalAmount,
       currency: finalCurrency,
-      jobLimit: cfg.jobLimit
+      jobLimit: cfg.jobLimit,
+      paymentMethod: '—'
     }).catch(()=>{});
     return res.json({ message: 'Subscription purchased', invoiceId, plan, startAt: startedAt, endAt: endsAt, amount: finalAmount, currency: finalCurrency, amountFormatted });
   } catch (err) {
@@ -723,10 +726,13 @@ router.post('/subscription/repeat', async (req, res) => {
       endAt: endsAt,
       companyName: company.companyName,
       companyEmail: company.email,
+      billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
+      orderDate: new Date(),
       amountFormatted,
       amount,
       currency,
-      jobLimit: cfg.jobLimit
+      jobLimit: cfg.jobLimit,
+      paymentMethod: '—'
     }).catch(()=>{});
     return res.json({ message: 'Subscription renewed', plan: currentPlan, invoiceId, startAt: startedAt, endAt: endsAt, amount, currency, amountFormatted });
   } catch (err) {
@@ -775,10 +781,13 @@ router.post('/subscription/upgrade', async (req, res) => {
       endAt: endsAt,
       companyName: company.companyName,
       companyEmail: company.email,
+      billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
+      orderDate: new Date(),
       amountFormatted,
       amount,
       currency,
-      jobLimit: getPlan(plan).jobLimit
+      jobLimit: getPlan(plan).jobLimit,
+      paymentMethod: '—'
     }).catch(()=>{});
     return res.json({ message: 'Subscription upgraded', plan, invoiceId, startAt: startedAt, endAt: endsAt, amount, currency, amountFormatted });
   } catch (err) {
@@ -948,10 +957,13 @@ module.exports.activateSubscription = async function activateSubscription({ emai
     endAt: endAt || startAt,
     companyName: company.companyName,
     companyEmail: company.email,
+    billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
+    orderDate: new Date(),
     amountFormatted,
     amount,
     currency,
-    jobLimit: getPlan(plan).jobLimit
+    jobLimit: getPlan(plan).jobLimit,
+    paymentMethod: '—'
   }).catch(()=>{});
   return { success: true, invoiceId, plan, startAt, endAt, origin, paymentId, orderId };
 };

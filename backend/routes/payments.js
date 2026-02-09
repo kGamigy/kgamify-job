@@ -133,12 +133,15 @@ router.post('/verify', async (req, res) => {
           endAt: endsAt || startedAt,
           companyName: company.companyName,
           companyEmail: company.email,
+          billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
           amountFormatted,
           amount,
           currency,
           jobLimit: getPlan(plan).jobLimit,
           paymentId: razorpay_payment_id,
-          orderId: razorpay_order_id
+          orderId: razorpay_order_id,
+          orderDate: new Date(),
+          paymentMethod: 'Razorpay'
         }).catch(()=>{});
       }
     }
@@ -203,12 +206,15 @@ async function webhookHandler(req, res) {
             endAt: endsAt || startedAt,
             companyName: company.companyName,
             companyEmail: company.email,
+            billingAddress: [company.addressLine1, company.addressLine2, company.address].filter(Boolean).join(', ') || company.address || '',
             amountFormatted,
             amount,
             currency,
             jobLimit: getPlan(plan).jobLimit,
             paymentId: payment?.id,
-            orderId: order?.id || payment?.order_id
+            orderId: order?.id || payment?.order_id,
+            orderDate: new Date(),
+            paymentMethod: 'Razorpay'
           }).catch(()=>{});
         }
       }
