@@ -489,17 +489,23 @@ export async function registerBasic(data) {
 }
 
 export async function verifySignupOtp(email, code) {
-  const res = await fetch(`${API_URL}/auth/verify-signup-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, code }) });
-  const j = await res.json();
-  if (!res.ok) throw new Error(j.error || 'Verification failed');
-  return j;
+  try {
+    const response = await apiClient.post('/auth/verify-signup-otp', { email, code });
+    return response.data;
+  } catch (error) {
+    const apiError = error.response?.data?.error || error.response?.data?.message;
+    throw new Error(apiError || 'OTP verification failed');
+  }
 }
 
 export async function resendSignupOtp(email) {
-  const res = await fetch(`${API_URL}/auth/resend-signup-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
-  const j = await res.json();
-  if (!res.ok) throw new Error(j.error || 'Resend failed');
-  return j;
+  try {
+    const response = await apiClient.post('/auth/resend-signup-otp', { email });
+    return response.data;
+  } catch (error) {
+    const apiError = error.response?.data?.error || error.response?.data?.message;
+    throw new Error(apiError || 'Failed to resend OTP');
+  }
 }
 
 // Subscription & profile helpers (company routes mounted at /api/companies)
