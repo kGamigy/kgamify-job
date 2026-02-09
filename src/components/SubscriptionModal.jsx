@@ -24,7 +24,7 @@ const PLAN_DESCRIPTIONS = {
   free: {
     title: 'Free',
     price: '₹0',
-    features: ['Post up to 3 active jobs', 'Basic visibility', 'Ads displayed', 'Recommendations disabled']
+    features: ['Post up to 3 active jobs', 'Basic visibility', 'Recommendations disabled']
   },
   paid3m: {
     title: '3 Months',

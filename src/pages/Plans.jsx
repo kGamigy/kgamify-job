@@ -19,7 +19,6 @@ const PLAN_DEFINITIONS = {
     features: [
       'Post up to 3 active jobs',
       'Basic listing visibility',
-      'Ads displayed (support platform)',
       'Recommendations disabled'
     ]
   },
@@ -32,7 +31,6 @@ const PLAN_DEFINITIONS = {
     features: [
       'Post up to 15 active jobs',
       'Higher visibility & ranking boost',
-      'No ads on your dashboard',
       'Recommendations enabled'
     ]
   },
@@ -45,7 +43,7 @@ const PLAN_DEFINITIONS = {
     features: [
       'Post up to 20 active jobs',
       'Priority search presence',
-      'No ads + recommendations enabled',
+      'Recommendations enabled',
       'Extended subscription duration'
     ]
   },
@@ -58,7 +56,7 @@ const PLAN_DEFINITIONS = {
     features: [
       'Post up to 30 active jobs',
       'Maximum visibility & priority',
-      'No ads + recommendations enabled',
+      'Recommendations enabled',
       'Longest duration & best value'
     ]
   }

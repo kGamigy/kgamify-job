@@ -17,7 +17,6 @@ function computePlanMeta(company) {
   const remaining = Math.max(0, limit - used);
   const daysRemaining = endsAt ? Math.max(0, Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   // Flags for feature gating
-  const adsEnabled = plan === 'free';
   const recommendationsEnabled = plan !== 'free';
   const paid = plan !== 'free';
   return {
@@ -28,7 +27,6 @@ function computePlanMeta(company) {
     used,
     remaining,
     daysRemaining,
-    adsEnabled,
     recommendationsEnabled,
     paid
   };

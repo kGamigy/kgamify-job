@@ -7,7 +7,6 @@ const plans = Object.freeze({
     label: 'Free',
     durationDays: 0, // indefinite until upgraded
     jobLimit: 3,
-    ads: true,
     recommendations: false
   }),
   paid3m: Object.freeze({
@@ -15,7 +14,6 @@ const plans = Object.freeze({
     label: '3 Months',
     durationDays: 90,
     jobLimit: 15,
-    ads: false,
     recommendations: true
   }),
   paid6m: Object.freeze({
@@ -23,7 +21,6 @@ const plans = Object.freeze({
     label: '6 Months',
     durationDays: 180,
     jobLimit: 20,
-    ads: false,
     recommendations: true
   }),
   paid12m: Object.freeze({
@@ -31,7 +28,6 @@ const plans = Object.freeze({
     label: '12 Months',
     durationDays: 365,
     jobLimit: 30,
-    ads: false,
     recommendations: true
   })
 });

@@ -6,6 +6,7 @@ import { getSubscriptionHistory } from '../api';
 export default function SubscriptionSnapshot({ isDarkMode = false }) {
   const [company, setCompany] = useState(null);
   const [history, setHistory] = useState([]);
+  const [expandedId, setExpandedId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const email = company?.email;
@@ -87,7 +88,7 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
           )}
 
           {planMeta && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mt-4">
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Days remaining</div>
                 <div className="font-medium">{daysRemaining !== null ? `${daysRemaining} day${daysRemaining === 1 ? '' : 's'}` : '—'}</div>
@@ -100,10 +101,6 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
                 <div className="opacity-70">AI Features</div>
                 <div className="font-medium">{planMeta.recommendationsEnabled ? 'Enabled' : 'Paid plans only'}</div>
               </div>
-              <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <div className="opacity-70">Ads</div>
-                <div className="font-medium">Not used</div>
-              </div>
             </div>
           )}
 
@@ -112,37 +109,43 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
             {loading ? (
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>Loading...</div>
             ) : history.length ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      <th className="text-left py-2 pr-4">Invoice</th>
-                      <th className="text-left py-2 pr-4">Plan</th>
-                      <th className="text-left py-2 pr-4">Amount</th>
-                      <th className="text-left py-2 pr-4">Start</th>
-                      <th className="text-left py-2 pr-4">End</th>
-                      <th className="text-left py-2 pr-4">Status</th>
-                      <th className="text-left py-2 pr-4">Payment ID</th>
-                      <th className="text-left py-2 pr-4">Order ID</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((h) => (
-                      <tr key={h.invoiceId || h.startAt || Math.random()} className={isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'}>
-                        <td className="py-2 pr-4 font-mono">{h.invoiceId || '—'}</td>
-                        <td className="py-2 pr-4">{h.plan}</td>
-                        <td className="py-2 pr-4">{typeof h.amount === 'number' ? new Intl.NumberFormat('en-IN',{ style:'currency', currency: h.currency || 'INR' }).format(h.amount) : '—'}</td>
-                        <td className="py-2 pr-4">{h.startAt ? new Date(h.startAt).toLocaleString() : '—'}</td>
-                        <td className="py-2 pr-4">{h.endAt ? new Date(h.endAt).toLocaleString() : '—'}</td>
-                        <td className="py-2 pr-4">
+              <div className="space-y-3">
+                {history.map((h) => {
+                  const id = h.invoiceId || h.startAt || `${h.plan}-${h.createdAt}`;
+                  const isOpen = expandedId === id;
+                  return (
+                    <div key={id} className={`rounded-lg border p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                          <div className="text-sm opacity-70">{h.plan?.toUpperCase() || 'PLAN'}</div>
+                          <div className="font-semibold">{typeof h.amount === 'number' ? new Intl.NumberFormat('en-IN',{ style:'currency', currency: h.currency || 'INR' }).format(h.amount) : '—'}</div>
+                          <div className="text-xs opacity-70">Invoice: {h.invoiceId || '—'}</div>
+                        </div>
+                        <div className="text-sm">
+                          <div>Start: {h.startAt ? new Date(h.startAt).toLocaleDateString() : '—'}</div>
+                          <div>End: {h.endAt ? new Date(h.endAt).toLocaleDateString() : '—'}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
                           <span className={`px-2 py-0.5 rounded text-xs ${h.status==='active' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>{h.status || '—'}</span>
-                        </td>
-                        <td className="py-2 pr-4 font-mono text-xs">{h.paymentId || '—'}</td>
-                        <td className="py-2 pr-4 font-mono text-xs">{h.orderId || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(isOpen ? null : id)}
+                            className={`text-sm font-medium ${isDarkMode ? 'text-orange-300' : 'text-[#ff8200]'}`}
+                          >
+                            {isOpen ? 'View less' : 'View more'}
+                          </button>
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div className={`mt-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <div>Payment ID: <span className="font-mono">{h.paymentId || '—'}</span></div>
+                          <div>Order ID: <span className="font-mono">{h.orderId || '—'}</span></div>
+                          <div>Created: {h.createdAt ? new Date(h.createdAt).toLocaleString() : '—'}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>No history yet.</div>

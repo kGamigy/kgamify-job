@@ -164,9 +164,7 @@ const resolveLogo = async () => {
     for (const p of localCandidates) {
       try {
         if (fs.existsSync(p)) {
-          const buf = fs.readFileSync(p);
-          const b64 = buf.toString('base64');
-          return { logoSrc: `data:image/png;base64,${b64}`, embed: false, inline: true, frontend };
+          return { logoSrc: 'cid:brandlogo@kgamify', embed: true, inline: false, frontend };
         }
       } catch { /* ignore */ }
     }
@@ -640,7 +638,7 @@ async function sendSubscriptionExpiredEmail(email, { companyName, previousPlan }
   const bodyHtml = `
     <p>Hi ${companyName || 'there'},</p>
     <p>Your previous plan <strong>${previousPlan}</strong> has expired and you have been moved to the Free plan.</p>
-    <p>The Free plan grants up to 3 active jobs and shows ads. Upgrade to regain higher limits and recommendations.</p>
+    <p>The Free plan grants up to 3 active jobs. Upgrade to regain higher limits and recommendations.</p>
   `;
   const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
   const emailContent = {
