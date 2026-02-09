@@ -136,7 +136,9 @@ router.post('/verify', async (req, res) => {
           amountFormatted,
           amount,
           currency,
-          jobLimit: getPlan(plan).jobLimit
+          jobLimit: getPlan(plan).jobLimit,
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id
         }).catch(()=>{});
       }
     }
@@ -204,7 +206,9 @@ async function webhookHandler(req, res) {
             amountFormatted,
             amount,
             currency,
-            jobLimit: getPlan(plan).jobLimit
+            jobLimit: getPlan(plan).jobLimit,
+            paymentId: payment?.id,
+            orderId: order?.id || payment?.order_id
           }).catch(()=>{});
         }
       }

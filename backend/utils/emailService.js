@@ -41,7 +41,7 @@ const renderEmail = ({
   const ctaHtml = cta && cta.url && cta.label
     ? `<div style="margin: 28px 0 8px 0;">
       <a href="${cta.url}"
-      style="background:linear-gradient(135deg, #ff7a1a, #ff4d8d);color:#ffffff;padding:14px 26px;text-decoration:none;border-radius:10px;border:0;font-weight:700;display:inline-block;box-shadow:0 6px 18px rgba(255,122,26,0.28)" target="_blank" rel="noopener">${cta.label}</a>
+      style="background:linear-gradient(135deg, #ff8200, #ffb347);color:#ffffff;padding:14px 26px;text-decoration:none;border-radius:10px;border:0;font-weight:700;display:inline-block;box-shadow:0 6px 18px rgba(255,130,0,0.28)" target="_blank" rel="noopener">${cta.label}</a>
     </div>`
     : '';
 
@@ -392,7 +392,7 @@ const emailTemplates = {
       preheader: `Your ${data.plan} plan is now active`,
       bodyHtml: `
         <p>Hi ${data.companyName || data.companyEmail || 'there'},</p>
-        <p>Your <strong>${data.plan.toUpperCase()}</strong> subscription has started. Below are your plan details:</p>
+        <p>Welcome to your <strong>${data.planLabel || data.plan}</strong> plan. Your subscription is now active and you have unlocked premium capabilities.</p>
 
         <div style="background:#fff7ed;border:1px solid #fdba74;padding:16px;border-radius:12px;margin:16px 0;">
           <p style="margin:0 0 6px 0;"><strong>Plan:</strong> ${data.planLabel || data.plan}</p>
@@ -401,12 +401,23 @@ const emailTemplates = {
           <p style="margin:0 0 6px 0;"><strong>Ends:</strong> ${new Date(data.endAt).toLocaleDateString()}</p>
           <p style="margin:0 0 6px 0;"><strong>Job Limit:</strong> ${data.jobLimit || '—'}</p>
           <p style="margin:0 0 6px 0;"><strong>Invoice ID:</strong> ${data.invoiceId}</p>
+          ${data.paymentId ? `<p style="margin:0 0 6px 0;"><strong>Payment ID:</strong> ${data.paymentId}</p>` : ''}
+          ${data.orderId ? `<p style="margin:0 0 6px 0;"><strong>Order ID:</strong> ${data.orderId}</p>` : ''}
           <p style="margin:0;"><strong>Amount:</strong> ${data.amountFormatted}</p>
+        </div>
+
+        <div style="margin:10px 0 16px 0;">
+          <h3 style="margin:0 0 8px 0;color:#ff8200;">AI Features Unlocked</h3>
+          <ul style="margin:0;padding-left:18px;color:#374151;">
+            <li><strong>AI Chatbot for assistance</strong> to guide hiring workflows.</li>
+            <li><strong>AI suggestions + JD verification</strong> for clearer, higher‑quality postings.</li>
+            <li><strong>AI resume recommendations</strong> to shortlist better candidates faster.</li>
+          </ul>
         </div>
 
         <p style="margin-top:10px;">Your invoice PDF is attached for your records.</p>
         <div style="margin-top:16px;background:#1e2938;border:1px solid #0f172a;padding:12px;border-radius:8px;font-size:12px;color:#e2e8f0;line-height:1.6;">
-          <strong>Disclaimer:</strong> This is a production-level application. Subscriptions are non-refundable and non-transferable once activated.
+          <strong>Disclaimer:</strong> This is a production‑level application. Subscriptions are non‑refundable and non‑transferable once activated.
         </div>
       `,
       logoSrc: data.logoSrc
