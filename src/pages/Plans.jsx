@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { setSubscription } from '../store/slices/subscriptionSlice';
 import extractSubscriptionSnapshot from '../utils/subscriptionSnapshot';
 import PropTypes from 'prop-types';
-import { getPaymentConfig, createPaymentOrder, verifyPayment, getSubscriptionHistory, selectFreePlan, upgradeSubscription, repeatSubscription } from '../api';
+import { getPaymentConfig, createPaymentOrder, verifyPayment, getSubscriptionHistory, selectFreePlan } from '../api';
 import usePlanMeta from '../hooks/usePlanMeta';
 import { FaRocket, FaStar, FaUserTie } from "react-icons/fa";
 
@@ -112,6 +112,62 @@ export default function Plans({ isDarkMode = false }) {
     });
   }
 
+  async function processPaidPlan(planId) {
+    const cfg = await getPaymentConfig();
+    const order = await createPaymentOrder(email, planId);
+    try { await ensureRazorpayLoaded(); } catch { setError('Failed to load payment SDK'); return; }
+    await new Promise((resolve, reject) => {
+      const rzp = new window.Razorpay({
+        key: cfg.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'kGamify',
+        description: `${PLAN_DEFINITIONS[planId].title} Subscription`,
+        order_id: order.orderId,
+        notes: { email, plan: planId },
+        prefill: { email, name: company?.companyName || email },
+        theme: { color: '#ff8200' },
+        handler: async (resp) => {
+          try {
+            await verifyPayment({
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+              email,
+              plan: planId
+            });
+            // Refresh metadata & history
+            try {
+              const hist = await getSubscriptionHistory(email);
+              if (hist?.company) {
+                const updated = {
+                  ...company,
+                  subscriptionPlan: hist.company.plan,
+                  subscriptionStartedAt: hist.company.startAt || hist.company.startedAt || hist.company.subscriptionStartedAt || new Date().toISOString(),
+                  subscriptionEndsAt: hist.company.endAt || hist.company.subscriptionEndsAt || null,
+                  subscriptionJobLimit: hist.company.jobLimit || hist.company.subscriptionJobLimit || PLAN_DEFINITIONS[planId]?.limit || company?.subscriptionJobLimit,
+                  downgradedFromPlan: hist.company.downgradedFromPlan || null
+                };
+                localStorage.setItem('companyData', JSON.stringify(updated));
+                setCompany(updated);
+                setHistory({ company: hist.company, history: Array.isArray(hist.history) ? hist.history : [] });
+                dispatch(setSubscription(extractSubscriptionSnapshot(updated)));
+              }
+            } catch { /* ignore */ }
+            await refreshPlanMeta(true);
+            setSuccess(`${PLAN_DEFINITIONS[planId].title} plan activated`);
+            resolve();
+          } catch (e) {
+            setError(e.message || 'Payment verification failed');
+            reject(e);
+          }
+        },
+        modal: { ondismiss: () => { setError('Payment cancelled'); reject(new Error('cancelled')); } }
+      });
+      rzp.open();
+    });
+  }
+
   async function handleSelect(planId) {
     setError(''); setSuccess('');
     if (!email) { setError('Please login to choose a plan.'); return; }
@@ -129,60 +185,7 @@ export default function Plans({ isDarkMode = false }) {
         setSuccess('Free plan activated');
         return;
       }
-      // Paid plan purchase via Razorpay
-      const cfg = await getPaymentConfig();
-      const order = await createPaymentOrder(email, planId);
-      try { await ensureRazorpayLoaded(); } catch { setError('Failed to load payment SDK'); return; }
-      await new Promise((resolve, reject) => {
-        const rzp = new window.Razorpay({
-          key: cfg.keyId,
-          amount: order.amount,
-          currency: order.currency,
-          name: 'kGamify',
-          description: `${PLAN_DEFINITIONS[planId].title} Subscription`,
-          order_id: order.orderId,
-          notes: { email, plan: planId },
-          prefill: { email, name: company?.companyName || email },
-          theme: { color: '#ff8200' },
-          handler: async (resp) => {
-            try {
-              await verifyPayment({
-                razorpay_order_id: resp.razorpay_order_id,
-                razorpay_payment_id: resp.razorpay_payment_id,
-                razorpay_signature: resp.razorpay_signature,
-                email,
-                plan: planId
-              });
-              // Refresh metadata & history
-              try {
-                const hist = await getSubscriptionHistory(email);
-                if (hist?.company) {
-                  const updated = {
-                    ...company,
-                    subscriptionPlan: hist.company.plan,
-                    subscriptionStartedAt: hist.company.startAt || hist.company.startedAt || hist.company.subscriptionStartedAt || new Date().toISOString(),
-                    subscriptionEndsAt: hist.company.endAt || hist.company.subscriptionEndsAt || null,
-                    subscriptionJobLimit: hist.company.jobLimit || hist.company.subscriptionJobLimit || PLAN_DEFINITIONS[planId]?.limit || company?.subscriptionJobLimit,
-                    downgradedFromPlan: hist.company.downgradedFromPlan || null
-                  };
-                  localStorage.setItem('companyData', JSON.stringify(updated));
-                  setCompany(updated);
-                  setHistory({ company: hist.company, history: Array.isArray(hist.history) ? hist.history : [] });
-                  dispatch(setSubscription(extractSubscriptionSnapshot(updated)));
-                }
-              } catch { /* ignore */ }
-              await refreshPlanMeta(true);
-              setSuccess(`${PLAN_DEFINITIONS[planId].title} plan activated`);
-              resolve();
-            } catch (e) {
-              setError(e.message || 'Payment verification failed');
-              reject(e);
-            }
-          },
-          modal: { ondismiss: () => { setError('Payment cancelled'); reject(new Error('cancelled')); } }
-        });
-        rzp.open();
-      });
+      await processPaidPlan(planId);
     } catch (err) {
       setError(err.message || 'Failed to process subscription');
     } finally {
@@ -195,26 +198,7 @@ export default function Plans({ isDarkMode = false }) {
     if (!email) { setError('Login required'); return; }
     try {
       setLoadingPlan(targetPlan);
-      await upgradeSubscription(email, targetPlan);
-      await refreshPlanMeta(true);
-      // After refresh, pull latest history/company to dispatch
-      try {
-        const hist = await getSubscriptionHistory(email);
-        if (hist?.company) {
-          const updated = {
-            ...company,
-            subscriptionPlan: hist.company.plan,
-            subscriptionStartedAt: hist.company.startAt || hist.company.subscriptionStartedAt || new Date().toISOString(),
-            subscriptionEndsAt: hist.company.endAt || hist.company.subscriptionEndsAt || null,
-            subscriptionJobLimit: hist.company.jobLimit || hist.company.subscriptionJobLimit || PLAN_DEFINITIONS[targetPlan]?.limit || company?.subscriptionJobLimit,
-            downgradedFromPlan: hist.company.downgradedFromPlan || null
-          };
-          localStorage.setItem('companyData', JSON.stringify(updated));
-          setCompany(updated);
-          dispatch(setSubscription(extractSubscriptionSnapshot(updated)));
-        }
-      } catch { /* ignore */ }
-      setSuccess('Upgraded successfully');
+      await processPaidPlan(targetPlan);
     } catch (e) {
       setError(e.message || 'Upgrade failed');
     } finally {
@@ -227,25 +211,7 @@ export default function Plans({ isDarkMode = false }) {
     if (!email || !planMeta?.plan || planMeta.plan === 'free') { setError('No paid plan to renew'); return; }
     try {
       setLoadingPlan(planMeta.plan);
-      await repeatSubscription(email);
-      await refreshPlanMeta(true);
-      try {
-        const hist = await getSubscriptionHistory(email);
-        if (hist?.company) {
-          const updated = {
-            ...company,
-            subscriptionPlan: hist.company.plan,
-            subscriptionStartedAt: hist.company.startAt || hist.company.subscriptionStartedAt || new Date().toISOString(),
-            subscriptionEndsAt: hist.company.endAt || hist.company.subscriptionEndsAt || null,
-            subscriptionJobLimit: hist.company.jobLimit || hist.company.subscriptionJobLimit || PLAN_DEFINITIONS[planMeta.plan]?.limit || company?.subscriptionJobLimit,
-            downgradedFromPlan: hist.company.downgradedFromPlan || null
-          };
-          localStorage.setItem('companyData', JSON.stringify(updated));
-          setCompany(updated);
-          dispatch(setSubscription(extractSubscriptionSnapshot(updated)));
-        }
-      } catch { /* ignore */ }
-      setSuccess('Renewed successfully');
+      await processPaidPlan(planMeta.plan);
     } catch (e) {
       setError(e.message || 'Renewal failed');
     } finally {

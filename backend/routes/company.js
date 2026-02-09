@@ -693,6 +693,10 @@ router.post('/subscription/repeat', async (req, res) => {
     const company = await Company.findOne({ email });
     if (!company) return res.status(404).json({ error: 'Company not found' });
     const currentPlan = company.subscriptionPlan || 'free';
+    if (process.env.NODE_ENV === 'production') {
+      const { paymentId, orderId } = req.body || {};
+      if (!paymentId && !orderId) return res.status(400).json({ error: 'Payment required to renew subscription' });
+    }
     if (currentPlan === 'free') return res.status(400).json({ error: 'Free plan does not require renewal' });
     const cfg = getPlan(currentPlan);
     const now = new Date();
@@ -738,6 +742,10 @@ router.post('/subscription/upgrade', async (req, res) => {
     const { email, plan } = req.body || {};
     if (!email || !plan) return res.status(400).json({ error: 'email and plan required' });
     if (!Object.keys(plans).includes(plan) || plan === 'free') return res.status(400).json({ error: 'Invalid upgrade target' });
+    if (process.env.NODE_ENV === 'production') {
+      const { paymentId, orderId } = req.body || {};
+      if (!paymentId && !orderId) return res.status(400).json({ error: 'Payment required to upgrade subscription' });
+    }
     const company = await Company.findOne({ email });
     if (!company) return res.status(404).json({ error: 'Company not found' });
     const order = ['free','paid3m','paid6m','paid12m'];
