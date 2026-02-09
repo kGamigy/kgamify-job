@@ -178,18 +178,21 @@ const Login = ({ setLoggedInEmail }) => {
         navigate("/dashboard");
       }
     } catch (error) {
-      if (error?.error === 'Verify your email first' || /not verified/i.test(error?.error||'')) {
+      const errText = error?.error || error?.message || '';
+      if (errText === 'Verify your email first' || /not verified/i.test(errText)) {
         setErrorMessage("Your email is not verified. Please check your inbox for the OTP.");
         setNeedsVerification(true);
         setPendingEmail(formData.identifier);
-      } else if (/on hold/i.test(error?.error||'') || /not approved/i.test(error?.error||'')) {
+      } else if (/on hold/i.test(errText) || /not approved/i.test(errText)) {
         // Treat pending/hold as informational, not blocking
         localStorage.setItem('companyLimitedAccess','true');
         setErrorMessage("Your company is awaiting approval. You can explore the dashboard, but posting jobs is disabled until approval.");
         // Auto navigate after a brief delay to show message context
         setTimeout(()=>navigate('/dashboard'), 600);
-      } else if (error?.error === 'Invalid credentials') {
+      } else if (errText === 'Invalid credentials' || /invalid email or password/i.test(errText) || /invalid.*password/i.test(errText)) {
         setErrorMessage("Invalid username/email or password. Please try again.");
+      } else if (/company not found/i.test(errText)) {
+        setErrorMessage("Company not found. Please register first.");
       } else {
         setErrorMessage("An error occurred during login. Please try again.");
       }
