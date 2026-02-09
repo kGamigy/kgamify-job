@@ -12,7 +12,11 @@ router.get('/list', async (req, res) => {
     if (!email) return res.json([]);
     const filter = { email };
     if (after) {
-      filter.createdAt = { $gt: new Date(after) };
+      const afterNum = Number(after);
+      const afterDate = Number.isFinite(afterNum) ? new Date(afterNum) : new Date(after);
+      if (!isNaN(afterDate.getTime())) {
+        filter.createdAt = { $gt: afterDate };
+      }
     }
     const list = await Notification.find(filter).sort({ createdAt: -1 }).limit(50).lean();
     res.json(list);
