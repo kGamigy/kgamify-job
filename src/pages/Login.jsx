@@ -193,6 +193,8 @@ const Login = ({ setLoggedInEmail }) => {
         setErrorMessage("Invalid username/email or password. Please try again.");
       } else if (/company not found/i.test(errText)) {
         setErrorMessage("Company not found. Please register first.");
+      } else if (errText) {
+        setErrorMessage(errText);
       } else {
         setErrorMessage("An error occurred during login. Please try again.");
       }

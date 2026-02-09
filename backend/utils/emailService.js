@@ -143,8 +143,11 @@ const renderEmail = ({
 const resolveLogo = async () => {
   const frontend = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
   const brandLogoUrl = process.env.BRAND_LOGO_URL || `${frontend}/KLOGO.png`;
-  const strategy = (process.env.EMAIL_LOGO_STRATEGY || '').toLowerCase();
+  let strategy = (process.env.EMAIL_LOGO_STRATEGY || '').toLowerCase();
   const embedFlag = String(process.env.EMAIL_EMBED_LOGO || '').toLowerCase() === 'true';
+  if (!strategy && process.env.SENDGRID_API_KEY) {
+    strategy = 'inline';
+  }
 
   // Explicit strategies: 'cid' (attachment), 'inline' (base64), default remote URL
   if (strategy === 'cid' || embedFlag) {
