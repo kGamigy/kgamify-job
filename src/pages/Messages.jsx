@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { getCompanyInfo, getCompanyMessages, sendCompanyMessage } from '../api';
 import { config } from '../config/env';
 import { FaComments } from "react-icons/fa";
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function Messages({ isDarkMode }) {
   // derive email once
@@ -175,7 +176,7 @@ export default function Messages({ isDarkMode }) {
             <div className={`text-sm ${isDarkMode? 'text-gray-400':'text-gray-500'}`}>No messages yet. Start the conversation below.</div>
           )}
           {messages.map((m,i)=>{
-            const when = (()=>{ try { return new Date(m.createdAt||Date.now()).toLocaleString(); } catch { return ''; } })();
+            const when = (()=>{ try { return formatDateDDMMYYYY(m.createdAt||Date.now()); } catch { return ''; } })();
             const mine = m.from === 'company';
             const bubbleCommon = 'max-w-[80%] rounded-2xl px-5 py-3 text-base shadow border';
             const mineStyle = isDarkMode? 'bg-[#ff8200] text-white border-[#ff9200]' : 'bg-[#ff8200] text-white border-[#ff8200]';

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import { getApplicationsByJobId } from "../api"; // Import getApplicationsByJobId function
+import { formatDateDDMMYYYY } from '../utils/date';
 
 const JobApplications = ({ isDarkMode, email }) => {
   const { jobId } = useParams();
@@ -70,7 +71,7 @@ const JobApplications = ({ isDarkMode, email }) => {
                   <div>
                     <span className="text-sm font-medium text-black dark:text-white">Applied on:</span>
                     <span className="ml-2 text-black dark:text-white">
-                      {new Date(application.createdAt || application.dateApplied).toLocaleDateString()}
+                      {formatDateDDMMYYYY(application.createdAt || application.dateApplied)}
                     </span>
                   </div>
                   

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { FaKey, FaPlus, FaTrash, FaCopy, FaCheck, FaToggleOn, FaToggleOff, FaSync } from 'react-icons/fa';
 import { getApiUrl } from '../utils/apiUrl';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function AdminAPI({ isDarkMode = false }) {
   const [apiKeys, setApiKeys] = useState([]);
@@ -246,7 +247,7 @@ export default function AdminAPI({ isDarkMode = false }) {
                         </button>
                       </div>
                       <div className="text-xs opacity-70">
-                        Created: {new Date(key.createdAt).toLocaleDateString()} • Last used: {key.lastUsed ? new Date(key.lastUsed).toLocaleString() : 'Never'}
+                        Created: {formatDateDDMMYYYY(key.createdAt)} • Last used: {key.lastUsed ? formatDateDDMMYYYY(key.lastUsed) : 'Never'}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">

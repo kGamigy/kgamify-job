@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import usePlanMeta from '../hooks/usePlanMeta';
 import { getSubscriptionHistory } from '../api';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function SubscriptionSnapshot({ isDarkMode = false }) {
   const [company, setCompany] = useState(null);
@@ -71,11 +72,11 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Started</div>
-                <div className="font-medium">{planMeta.started ? planMeta.started.toLocaleDateString() : '—'}</div>
+                <div className="font-medium">{formatDateDDMMYYYY(planMeta.started)}</div>
               </div>
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Ends</div>
-                <div className="font-medium">{computedEndsAt ? computedEndsAt.toLocaleDateString() : '—'}</div>
+                <div className="font-medium">{formatDateDDMMYYYY(computedEndsAt)}</div>
                 {!planMeta.endsAt && computedEndsAt && (
                   <div className="text-xs opacity-60 mt-1">Auto-calculated from plan duration</div>
                 )}
@@ -122,8 +123,8 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
                           <div className="text-xs opacity-70">Invoice: {h.invoiceId || '—'}</div>
                         </div>
                         <div className="text-sm">
-                          <div>Start: {h.startAt ? new Date(h.startAt).toLocaleDateString() : '—'}</div>
-                          <div>End: {h.endAt ? new Date(h.endAt).toLocaleDateString() : '—'}</div>
+                          <div>Start: {formatDateDDMMYYYY(h.startAt)}</div>
+                          <div>End: {formatDateDDMMYYYY(h.endAt)}</div>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className={`px-2 py-0.5 rounded text-xs ${h.status==='active' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>{h.status || '—'}</span>
@@ -140,7 +141,7 @@ export default function SubscriptionSnapshot({ isDarkMode = false }) {
                         <div className={`mt-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           <div>Payment ID: <span className="font-mono">{h.paymentId || '—'}</span></div>
                           <div>Order ID: <span className="font-mono">{h.orderId || '—'}</span></div>
-                          <div>Created: {h.createdAt ? new Date(h.createdAt).toLocaleString() : '—'}</div>
+                          <div>Created: {formatDateDDMMYYYY(h.createdAt)}</div>
                         </div>
                       )}
                     </div>

@@ -18,6 +18,7 @@ import {
 import { fetchNotifications, markNotificationsRead, markAllNotificationsRead } from '../api';
 import usePlanMeta from '../hooks/usePlanMeta';
 import Klogo from '../assets/KLOGO.png';
+import { formatDateDDMMYYYY } from '../utils/date';
 import { colors } from '../config/designSystem';
 
   function Navbar({ onSidebarToggle, onThemeToggle, isDarkMode, $isDarkMode, userCompany = null, email = '' }) {
@@ -51,7 +52,7 @@ import { colors } from '../config/designSystem';
       if (hr < 24) return `${hr}h ago`;
       const day = Math.floor(hr / 24);
       if (day < 7) return `${day}d ago`;
-      return d.toLocaleDateString();
+      return formatDateDDMMYYYY(d);
     } catch { return ''; }
   }, []);
 

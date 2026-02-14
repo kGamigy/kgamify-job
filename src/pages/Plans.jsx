@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setSubscription } from '../store/slices/subscriptionSlice';
 import extractSubscriptionSnapshot from '../utils/subscriptionSnapshot';
+import { formatDateDDMMYYYY } from '../utils/date';
 import PropTypes from 'prop-types';
 import { getPaymentConfig, createPaymentOrder, verifyPayment, getSubscriptionHistory, selectFreePlan } from '../api';
 import usePlanMeta from '../hooks/usePlanMeta';
@@ -302,18 +303,18 @@ export default function Plans({ isDarkMode = false }) {
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg font-semibold">Subscription Snapshot</h4>
               <div className="flex items-center gap-3 text-sm opacity-80">
-                <span>Plan: <strong>{planMeta.plan}</strong>{planMeta.endsAt && ` • Ends: ${planMeta.endsAt.toISOString().slice(0,10)}`}</span>
+                <span>Plan: <strong>{planMeta.plan}</strong>{planMeta.endsAt && ` • Ends: ${formatDateDDMMYYYY(planMeta.endsAt)}`}</span>
                 <Link to="/subscription" className="underline text-[#ff8200]">Open full snapshot</Link>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Started</div>
-                <div className="font-medium">{planMeta.started ? planMeta.started.toLocaleDateString() : '—'}</div>
+                <div className="font-medium">{formatDateDDMMYYYY(planMeta.started)}</div>
               </div>
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Ends</div>
-                <div className="font-medium">{planMeta.endsAt ? planMeta.endsAt.toLocaleDateString() : 'Indefinite'}</div>
+                <div className="font-medium">{planMeta.endsAt ? formatDateDDMMYYYY(planMeta.endsAt) : 'Indefinite'}</div>
               </div>
               <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <div className="opacity-70">Active jobs</div>
@@ -339,8 +340,8 @@ export default function Plans({ isDarkMode = false }) {
                         <tr key={h.invoiceId || h.startAt} className={isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'}>
                           <td className="py-2 pr-4 font-mono">{h.invoiceId || '—'}</td>
                           <td className="py-2 pr-4">{h.plan}</td>
-                          <td className="py-2 pr-4">{h.startAt ? new Date(h.startAt).toLocaleString() : '—'}</td>
-                          <td className="py-2 pr-4">{h.endAt ? new Date(h.endAt).toLocaleString() : '—'}</td>
+                          <td className="py-2 pr-4">{formatDateDDMMYYYY(h.startAt)}</td>
+                          <td className="py-2 pr-4">{formatDateDDMMYYYY(h.endAt)}</td>
                           <td className="py-2 pr-4">
                             <span className={`px-2 py-0.5 rounded text-xs ${h.status==='active' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>{h.status}</span>
                           </td>

@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient';
 import { emailService } from './emailService';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 /**
  * Application Management Service
@@ -285,7 +286,7 @@ class ApplicationService {
           applicationId: application.id,
           status,
           message: statusConfig.message,
-          statusDate: new Date().toLocaleDateString(),
+          statusDate: formatDateDDMMYYYY(new Date()),
           applicationUrl: `${window.location.origin}/applications/${application.id}`,
           ...application.statusMetadata
         }

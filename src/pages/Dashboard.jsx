@@ -17,6 +17,7 @@ import {
   FaSyncAlt
 } from "react-icons/fa";
 import { fetchJobs } from "../store/slices/jobsSlice";
+import { formatDateDDMMYYYY } from '../utils/date';
 import { 
   selectJobs, 
   selectJobsLoading, 
@@ -122,7 +123,7 @@ const JobCard = ({ job, isDarkMode, navigate, onToggle }) => (
     </div>
     <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
       <div className="flex items-center"><FaUsers className="h-4 w-4 mr-1.5 text-gray-500 dark:text-gray-400" /> {job.applicants?.length || 0} apps</div>
-      <div className="flex items-center"><FaCalendarAlt className="h-4 w-4 mr-1.5 text-gray-500 dark:text-gray-400" /> {new Date(job.createdAt || job.datePosted).toLocaleDateString()}</div>
+      <div className="flex items-center"><FaCalendarAlt className="h-4 w-4 mr-1.5 text-gray-500 dark:text-gray-400" /> {formatDateDDMMYYYY(job.createdAt || job.datePosted)}</div>
     </div>
     <div className="mt-4 grid grid-cols-2 gap-2">
       <button

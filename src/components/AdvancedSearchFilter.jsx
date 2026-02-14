@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { MobileButton, MobileInput, MobileBottomSheet } from './MobileComponents';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 /**
  * Advanced Search and Filter Component
@@ -826,7 +827,7 @@ const AdvancedSearchFilter = ({
                         {search.location && ` in ${search.location}`}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        {new Date(search.createdAt).toLocaleDateString()}
+                        {formatDateDDMMYYYY(search.createdAt)}
                       </p>
                     </button>
                   </div>

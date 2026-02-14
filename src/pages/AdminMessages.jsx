@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { getAdminCompanyMessages, sendAdminCompanyMessage } from '../api';
 import { config } from '../config/env';
 import { useParams, useNavigate } from 'react-router-dom';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function AdminMessages({ isDarkMode }) {
   const { companyId } = useParams();
@@ -124,7 +125,7 @@ export default function AdminMessages({ isDarkMode }) {
         <div className={`flex-1 overflow-y-auto rounded border ${isDarkMode? 'bg-gray-800 border-gray-700':'bg-white border-gray-200'} p-4 space-y-3`}>
           {messages.length===0 && <div className={`text-sm ${isDarkMode? 'text-gray-400':'text-gray-500'}`}>No messages yet.</div>}
           {messages.map((m,i)=>{
-            const when = (()=>{ try { return new Date(m.createdAt||Date.now()).toLocaleString(); } catch { return ''; } })();
+            const when = (()=>{ try { return formatDateDDMMYYYY(m.createdAt||Date.now()); } catch { return ''; } })();
             const mine = m.from === 'admin';
             const bubbleCommon = 'max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow border';
             const mineStyle = isDarkMode? 'bg-[#ff8200] text-white border-[#ff9200]' : 'bg-[#ff8200] text-white border-[#ff8200]';

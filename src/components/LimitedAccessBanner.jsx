@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import usePlanMeta from '../hooks/usePlanMeta';
 import PropTypes from 'prop-types';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 /**
  * LimitedAccessBanner
@@ -199,9 +200,9 @@ export default function LimitedAccessBanner({ company, isDarkMode, $isDarkmode, 
           {company?.subscriptionActivatedAt && (
             <span className={effectiveDark ? 'text-gray-400' : 'text-yellow-700'}>
               {(() => {
-                const started = new Date(company.subscriptionActivatedAt).toLocaleDateString();
+                const started = formatDateDDMMYYYY(company.subscriptionActivatedAt);
                 if (company.subscriptionExpiresAt) {
-                  const exp = new Date(company.subscriptionExpiresAt).toLocaleDateString();
+                  const exp = formatDateDDMMYYYY(company.subscriptionExpiresAt);
                   return `Started: ${started} • Expires: ${exp}`;
                 }
                 return `Started: ${started}`;

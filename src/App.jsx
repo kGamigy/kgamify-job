@@ -28,6 +28,7 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminMessages = lazy(() => import("./pages/AdminMessages"));
 const AdminApplicants = lazy(() => import("./pages/AdminApplicants"));
 const AdminJobs = lazy(() => import("./pages/AdminJobs"));
+const AdminAllJobs = lazy(() => import("./pages/AdminAllJobs"));
 const AdminProfile = lazy(() => import("./pages/AdminProfile"));
 const EditJob = lazy(() => import("./pages/EditJob"));
 const Job = lazy(() => import("./JobApplications/Job.jsx"));
@@ -346,6 +347,10 @@ function AppContent() {
                     <Route
                       path="/admin/jobs/:companyId"
                       element={<AdminLayout isDarkMode={isDarkMode} $isDarkMode={isDarkMode} onThemeToggle={handleThemeToggle}><AdminJobs isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></AdminLayout>}
+                    />
+                    <Route
+                      path="/admin/jobs"
+                      element={<AdminLayout isDarkMode={isDarkMode} $isDarkMode={isDarkMode} onThemeToggle={handleThemeToggle}><AdminAllJobs isDarkMode={isDarkMode} $isDarkMode={isDarkMode} /></AdminLayout>}
                     />
                     <Route
                       path="/admin/api"

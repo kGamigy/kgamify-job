@@ -7,6 +7,7 @@ import {
   rejectApplication,
 } from '../api';
 import ResumeViewer from '../components/ResumeViewer';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function Applications({ isDarkMode }) {
   const [apps, setApps] = useState([]);
@@ -365,7 +366,7 @@ export default function Applications({ isDarkMode }) {
                                 {status === 'shortlisted' ? 'Shortlisted' : status === 'rejected' ? 'Rejected' : 'New'}
                               </span>
                             </td>
-                            <td className={`px-4 py-3 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{new Date(dateText).toLocaleDateString()}</td>
+                            <td className={`px-4 py-3 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{formatDateDDMMYYYY(dateText)}</td>
                             <td className="px-4 py-3">
                               {app.resume ? (
                                 <ResumeViewer resumeUrl={app.resume} applicantName={app.applicantName || app.name} variant="inline" />
@@ -425,7 +426,7 @@ export default function Applications({ isDarkMode }) {
                         })()}`}>
                           {(app.status || 'New')}
                         </span>
-                        <span className="text-xs opacity-70">{new Date(app.appliedAt || app.createdAt || app.date).toLocaleDateString()}</span>
+                        <span className="text-xs opacity-70">{formatDateDDMMYYYY(app.appliedAt || app.createdAt || app.date)}</span>
                       </div>
                       {app.resume ? (
                         <div className="mt-3">

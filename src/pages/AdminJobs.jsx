@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminListCompanyJobs, adminToggleJobStatus, adminDeleteJob } from '../api';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 export default function AdminJobs({ isDarkMode, $isDarkMode }) {
   const dark = $isDarkMode ?? isDarkMode ?? false;
@@ -85,7 +86,7 @@ export default function AdminJobs({ isDarkMode, $isDarkMode }) {
               {jobs.map(job => (
                 <li key={job._id} className={`grid grid-cols-12 items-center px-4 py-3 border-t ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
                   <div className="col-span-4 truncate" title={job.jobTitle}>{job.jobTitle}</div>
-                  <div className="col-span-3">{new Date(job.createdAt || job.postedAt || job._id.substring(0,8) * 1000).toLocaleString()}</div>
+                  <div className="col-span-3">{formatDateDDMMYYYY(job.createdAt || job.postedAt || job._id.substring(0,8) * 1000)}</div>
                   <div className="col-span-2">
                     <span className={`px-2 py-0.5 rounded text-xs ${job.jobActive ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>{job.jobActive ? 'Active' : 'Inactive'}</span>
                   </div>

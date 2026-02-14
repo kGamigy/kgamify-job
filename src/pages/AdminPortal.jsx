@@ -18,6 +18,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { grantSensitiveEdit, revokeSensitiveEdit, changeAdminPassword, denyCompanyWithReason, holdCompanyWithReason, revokeCompanyAccess } from '../api';
 import { getBaseUrl } from '../utils/apiUrl';
+import { formatDateDDMMYYYY } from '../utils/date';
 // Sidebar, header, and footer provided by AdminLayout wrapper
 
 function GrantSensitiveEditButton({ company, $isDarkMode, onNotify }) {
@@ -548,14 +549,7 @@ const AdminPortal = ({ $isDarkMode }) => {
     }
   };
   
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString) => formatDateDDMMYYYY(dateString);
   
   // If not authenticated, show redirect placeholder (dedicated login page handles UI)
   if (!isAuthenticated) {

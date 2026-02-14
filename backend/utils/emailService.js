@@ -397,12 +397,11 @@ const emailTemplates = {
           <p style="margin:0 0 6px 0;"><strong>Company:</strong> ${data.companyName || data.companyEmail}</p>
           <p style="margin:0 0 6px 0;"><strong>Account:</strong> ${data.companyEmail || '—'}</p>
           <p style="margin:0 0 6px 0;"><strong>Order Number:</strong> ${data.orderId || '—'}</p>
-          <p style="margin:0 0 6px 0;"><strong>Order Date:</strong> ${data.orderDate ? new Date(data.orderDate).toLocaleString() : new Date().toLocaleString()}</p>
-          <p style="margin:0 0 6px 0;"><strong>Starts:</strong> ${new Date(data.startAt).toLocaleDateString()}</p>
-          <p style="margin:0 0 6px 0;"><strong>Ends:</strong> ${new Date(data.endAt).toLocaleDateString()}</p>
+          <p style="margin:0 0 6px 0;"><strong>Order Date:</strong> ${formatDateDDMMYYYY(data.orderDate || new Date())}</p>
+          <p style="margin:0 0 6px 0;"><strong>Starts:</strong> ${formatDateDDMMYYYY(data.startAt)}</p>
+          <p style="margin:0 0 6px 0;"><strong>Ends:</strong> ${formatDateDDMMYYYY(data.endAt)}</p>
           <p style="margin:0 0 6px 0;"><strong>Job Limit:</strong> ${data.jobLimit || '—'}</p>
           <p style="margin:0 0 6px 0;"><strong>Invoice ID:</strong> ${data.invoiceId}</p>
-          ${data.paymentId ? `<p style="margin:0 0 6px 0;"><strong>Payment ID:</strong> ${data.paymentId}</p>` : ''}
           <p style="margin:0 0 6px 0;"><strong>Payment Method:</strong> ${data.paymentMethod || '—'}</p>
           <p style="margin:0;"><strong>Amount:</strong> ${data.amountFormatted}</p>
         </div>
@@ -447,7 +446,7 @@ const emailTemplates = {
           <strong>Disclaimer:</strong> Subscriptions are non‑refundable and non‑transferable once activated.
         </div>
         <div style="margin-top:14px;">
-          <a href="${(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/,'')}/support" style="background:#ff8200;color:#ffffff;padding:10px 16px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:600;">Contact Support</a>
+          <a href="https://kgamify-job.onrender.com/support" style="background:#ff8200;color:#ffffff;padding:10px 16px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:600;">Contact Support</a>
         </div>
       `,
       logoSrc: data.logoSrc
@@ -468,6 +467,13 @@ const getStatusColor = (status) => {
   return colors[status.toLowerCase()] || '#6b7280';
 };
 
+const formatDateDDMMYYYY = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-GB');
+};
+
 // Main email sending function using SendGrid
 const sendEmail = async (to, template, data) => {
   try {
@@ -485,7 +491,7 @@ const sendEmail = async (to, template, data) => {
     });
     
     // Get logo
-    const { logoSrc } = await resolveLogo();
+    const { logoSrc, embed } = await resolveLogo();
     const emailContent = emailTemplates[template]({ ...data, logoSrc });
 
     // Initialize SendGrid client
@@ -500,6 +506,39 @@ const sendEmail = async (to, template, data) => {
       subject: emailContent.subject,
       html: emailContent.html
     };
+
+    if (embed) {
+      try {
+        const frontend = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+        const brandLogoUrl = process.env.BRAND_LOGO_URL || `${frontend}/KLOGO.png`;
+        const localCandidates = [
+          path.resolve(__dirname, '../../src/assets/KLOGO.png'),
+          path.resolve(__dirname, '../../public/KLOGO.png')
+        ];
+        let logoBuffer;
+        for (const p of localCandidates) {
+          if (fs.existsSync(p)) {
+            logoBuffer = fs.readFileSync(p);
+            break;
+          }
+        }
+        if (!logoBuffer) {
+          const resp = await axios.get(brandLogoUrl, { responseType: 'arraybuffer', timeout: 5000 });
+          logoBuffer = Buffer.from(resp.data);
+        }
+        msg.attachments = [
+          {
+            content: logoBuffer.toString('base64'),
+            filename: 'kgamify-logo.png',
+            type: 'image/png',
+            disposition: 'inline',
+            content_id: 'brandlogo@kgamify'
+          }
+        ];
+      } catch (logoErr) {
+        console.error('[emailService] Failed to attach logo:', logoErr.message);
+      }
+    }
 
     if (template === 'subscriptionInvoice') {
       try {
@@ -516,6 +555,7 @@ const sendEmail = async (to, template, data) => {
           issuedAt: new Date()
         });
         msg.attachments = [
+          ...(msg.attachments || []),
           {
             content: invoiceBuffer.toString('base64'),
             filename: `${data.invoiceId || 'invoice'}.pdf`,

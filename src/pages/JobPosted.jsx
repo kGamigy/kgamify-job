@@ -21,6 +21,7 @@ import {
 } from 'react-icons/fa';
 import { getJobs, deleteJob } from '../api';
 import PropTypes from 'prop-types';
+import { formatDateDDMMYYYY } from '../utils/date';
 
 const JobPosted = ({ isDarkMode, email }) => {
   const [jobs, setJobs] = useState([]);
@@ -708,7 +709,7 @@ const JobPosted = ({ isDarkMode, email }) => {
                 >
                   {(() => {
                     const d = job.postedAt || job.datePosted || job.createdAt;
-                    const txt = d ? new Date(d).toLocaleString() : "N/A";
+                    const txt = d ? formatDateDDMMYYYY(d) : "N/A";
                     return <>Posted at: {txt}</>;
                   })()}
                 </div>

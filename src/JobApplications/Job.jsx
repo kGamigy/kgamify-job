@@ -8,6 +8,7 @@ import { getJobById, getApplicationsByJobId, getRecommendationsForJob, shortlist
 import usePlanMeta from '../hooks/usePlanMeta';
 import sanitizeHTML from "../utils/sanitizeHTML";
 import ResumeViewer from "../components/ResumeViewer";
+import { formatDateDDMMYYYY } from '../utils/date';
 
 const Job = ({ isDarkMode }) => {
   const { jobId } = useParams();
@@ -594,7 +595,7 @@ const Job = ({ isDarkMode }) => {
                               <td className="py-2 px-3">
                                 <span className={`px-2 py-0.5 rounded text-xs ${applicant.status === 'shortlisted' ? 'bg-green-100 text-green-700' : applicant.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{applicant.status || 'new'}</span>
                               </td>
-                              <td className="py-2 px-3 text-right whitespace-nowrap">{new Date(applicant.createdAt).toLocaleDateString()}</td>
+                              <td className="py-2 px-3 text-right whitespace-nowrap">{formatDateDDMMYYYY(applicant.createdAt)}</td>
                               <td className="py-2 px-3 text-right">
                                 {applicant.resume ? (
                                   <a href={applicant.resume} target="_blank" rel="noreferrer" className="px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-gray-700">View</a>
@@ -645,7 +646,7 @@ const Job = ({ isDarkMode }) => {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className={`text-base font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{applicant.applicantName}</div>
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Applied on: {new Date(applicant.createdAt).toLocaleDateString()}</div>
+                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Applied on: {formatDateDDMMYYYY(applicant.createdAt)}</div>
                             </div>
                             <div className="shrink-0">
                               {applicant.status ? (

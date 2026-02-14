@@ -423,6 +423,30 @@ router.post('/company/:id/messages', adminAuth, upload.array('attachments', 5), 
 
 module.exports = router;
 // --- Admin Job Management Endpoints ---
+// List all jobs across companies (with applicants)
+router.get('/jobs', adminAuth, async (req, res) => {
+  try {
+    const { q, companyEmail, status } = req.query || {};
+    const filter = {};
+    if (companyEmail) filter.companyEmail = companyEmail;
+    if (status) filter.status = status;
+    if (q) {
+      filter.$or = [
+        { jobTitle: { $regex: new RegExp(q, 'i') } },
+        { companyName: { $regex: new RegExp(q, 'i') } },
+        { companyEmail: { $regex: new RegExp(q, 'i') } },
+        { location: { $regex: new RegExp(q, 'i') } }
+      ];
+    }
+    const jobs = await Job.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('applicants', 'applicantName applicantEmail appName resume status createdAt');
+    return res.json({ count: jobs.length, jobs });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // List all jobs for a specific company (by company id)
 router.get('/company/:id/jobs', adminAuth, async (req, res) => {
   try {

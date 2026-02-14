@@ -21,9 +21,9 @@ function generateInvoiceHtml({
   notes
 }) {
   const amountStr = formatAmount(amount, currency);
-  const start = new Date(startAt).toLocaleString('en-IN');
-  const end = endAt ? new Date(endAt).toLocaleString('en-IN') : 'N/A';
-  const issued = new Date(issuedAt).toLocaleString('en-IN');
+  const start = new Date(startAt).toLocaleDateString('en-GB');
+  const end = endAt ? new Date(endAt).toLocaleDateString('en-GB') : 'N/A';
+  const issued = new Date(issuedAt).toLocaleDateString('en-GB');
 
   return `<!doctype html>
   <html>
@@ -31,8 +31,12 @@ function generateInvoiceHtml({
       <meta charset="utf-8"/>
       <title>Invoice ${invoiceId}</title>
       <style>
-        body{font-family:Arial,Helvetica,sans-serif;color:#111827}
-        .card{max-width:760px;margin:24px auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px}
+        body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:#f8fafc}
+        .card{max-width:760px;margin:24px auto;padding:0;border:1px solid #e5e7eb;border-radius:12px;background:#ffffff;overflow:hidden}
+        .header{background:linear-gradient(135deg,#1f2937,#111827);color:#fff;padding:22px 24px}
+        .header h2{margin:0;color:#fff}
+        .header .sub{color:#fbbf24;font-size:12px;margin-top:6px}
+        .content{padding:24px}
         .muted{color:#6b7280}
         .row{display:flex;justify-content:space-between;gap:12px}
         .badge{display:inline-block;background:#ffedd5;color:#9a3412;border:1px solid #fdba74;border-radius:999px;padding:2px 10px;font-weight:600}
@@ -43,13 +47,17 @@ function generateInvoiceHtml({
     </head>
     <body>
       <div class="card">
-        <div class="row" style="align-items:center">
-          <div style="display:flex;align-items:center;gap:10px">
-            ${logoUrl ? `<img src="${logoUrl}" alt="${brand}" width="48" height="48" style="object-fit:contain"/>` : ''}
-            <h2 style="margin:0">${brand} Subscription Invoice</h2>
+        <div class="header">
+          <div class="row" style="align-items:center">
+            <div style="display:flex;align-items:center;gap:10px">
+              ${logoUrl ? `<img src="${logoUrl}" alt="${brand}" width="48" height="48" style="object-fit:contain"/>` : ''}
+              <h2>${brand} Subscription Invoice</h2>
+            </div>
+            <div class="muted" style="color:#e5e7eb">Invoice ID: <strong>${invoiceId}</strong><br/>Issued: ${issued}</div>
           </div>
-          <div class="muted">Invoice ID: <strong>${invoiceId}</strong><br/>Issued: ${issued}</div>
+          <div class="sub">Thank you for your payment</div>
         </div>
+        <div class="content">
 
         <div class="row" style="margin-top:16px">
           <div>
@@ -84,6 +92,7 @@ function generateInvoiceHtml({
           2) Money refund is generally <strong>not possible</strong>; exceptions may apply only if required by law.<br/>
           3) Subscriptions are <strong>non-transferable</strong> between companies.
         </div>
+        </div>
       </div>
     </body>
   </html>`;
@@ -109,22 +118,27 @@ function generateInvoicePdfBuffer({
       doc.on('data', (d) => chunks.push(d));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-      doc.fontSize(20).fillColor('#ff8200').text(`${brand} Subscription Invoice`, { align: 'left' });
-      doc.moveDown(0.5);
-      doc.fontSize(10).fillColor('#6b7280').text(`Invoice ID: ${invoiceId}`);
-      doc.text(`Issued: ${new Date(issuedAt).toLocaleString('en-IN')}`);
+      // Header band
+      doc.rect(0, 0, doc.page.width, 110).fill('#1f2937');
+      doc.fillColor('#ffffff').fontSize(22).text(`${brand} Subscription Invoice`, 40, 36);
+      doc.fillColor('#fbbf24').fontSize(10).text('Thank you for your payment', 40, 66);
+      doc.rect(0, 110, doc.page.width, 6).fill('#ff8200');
 
-      doc.moveDown();
+      doc.fillColor('#111827');
+      doc.fontSize(10).fillColor('#6b7280').text(`Invoice ID: ${invoiceId}`, 40, 130);
+      doc.text(`Issued: ${new Date(issuedAt).toLocaleDateString('en-GB')}`);
+
+      doc.moveDown(1.5);
       doc.fontSize(12).fillColor('#111827').text('Billed To');
       doc.fontSize(11).fillColor('#374151').text(companyName || companyEmail || '');
       if (companyEmail) doc.text(companyEmail);
 
-      doc.moveDown();
+      doc.moveDown(1.2);
       doc.fontSize(12).fillColor('#111827').text('Subscription');
       doc.fontSize(11).fillColor('#374151').text(`Plan: ${String(plan || '').toUpperCase()}`);
-      doc.text(`Period: ${new Date(startAt).toLocaleDateString('en-IN')} - ${endAt ? new Date(endAt).toLocaleDateString('en-IN') : 'N/A'}`);
+      doc.text(`Period: ${new Date(startAt).toLocaleDateString('en-GB')} - ${endAt ? new Date(endAt).toLocaleDateString('en-GB') : 'N/A'}`);
 
-      doc.moveDown();
+      doc.moveDown(1.2);
       doc.fontSize(12).fillColor('#111827').text('Amount');
       if (typeof amount === 'number') {
         doc.fontSize(12).fillColor('#ff8200').text(new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount));
@@ -132,8 +146,22 @@ function generateInvoicePdfBuffer({
         doc.fontSize(12).fillColor('#ff8200').text('N/A');
       }
 
-      doc.moveDown();
-      doc.fontSize(10).fillColor('#6b7280').text('Disclaimer: This is a production-level application invoice. Subscriptions are non-refundable and non-transferable.', { width: 520 });
+      // Table styling
+      doc.moveDown(1.4);
+      const tableTop = doc.y;
+      doc.rect(40, tableTop, 520, 22).fill('#fff7ed');
+      doc.fillColor('#9a3412').fontSize(11).text('Description', 50, tableTop + 6);
+      doc.text('Amount', 420, tableTop + 6);
+      const rowTop = tableTop + 22;
+      doc.rect(40, rowTop, 520, 32).stroke('#e5e7eb');
+      doc.fillColor('#111827').fontSize(11).text(`${brand} ${plan} plan (30 days)`, 50, rowTop + 9);
+      const amountLabel = typeof amount === 'number'
+        ? new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(amount)
+        : 'N/A';
+      doc.text(amountLabel, 420, rowTop + 9);
+
+      doc.moveDown(3);
+      doc.fontSize(10).fillColor('#6b7280').text('Disclaimer: Subscriptions are non-refundable and non-transferable.', { width: 520 });
 
       doc.end();
     } catch (err) {

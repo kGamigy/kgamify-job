@@ -233,6 +233,15 @@ export const adminListCompanyJobs = async (companyId) => {
   return res.data;
 };
 
+export const adminListAllJobs = async (query = '') => {
+  const token = localStorage.getItem('adminToken');
+  const params = new URLSearchParams();
+  if (query) params.set('q', query);
+  const qs = params.toString();
+  const res = await axios.get(`${API_URL}/admin/jobs${qs ? `?${qs}` : ''}`, { headers: token ? { 'x-auth-token': token } : undefined });
+  return res.data;
+};
+
 export const adminToggleJobStatus = async (jobId, jobActive) => {
   const token = localStorage.getItem('adminToken');
   const res = await axios.patch(`${API_URL}/admin/job/${jobId}/status`, { jobActive }, { headers: token ? { 'x-auth-token': token } : undefined });

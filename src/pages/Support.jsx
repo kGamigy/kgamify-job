@@ -41,6 +41,16 @@ const Support = ({ isDarkMode, $isDarkMode }) => {
           <h3 className="font-semibold mb-2">When Contacting Support</h3>
             <p className="text-sm leading-relaxed">Include any relevant screenshots, error messages, and the email associated with your account. This helps us resolve your issue faster.</p>
         </div>
+        <div className={`p-5 rounded-lg border ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'} shadow mb-16`}>
+          <h3 className="font-semibold mb-2">Merchant Legal Entity</h3>
+          <div className="text-sm leading-relaxed space-y-2">
+            <p><strong>Merchant Legal entity name:</strong> YANTRIKISOFT PRIVATE LIMITED</p>
+            <p><strong>Registered Address:</strong> 273, SATRA PLAZA, PLOT 19, SECTOR 19D, VASHI Thane MAHARASHTRA 400703</p>
+            <p><strong>Operational Address:</strong> 273, SATRA PLAZA, PLOT 19, SECTOR 19D, VASHI Thane MAHARASHTRA 400703</p>
+            <p><strong>Telephone No:</strong> 8879688067</p>
+            <p><strong>E-Mail ID:</strong> <a href="mailto:admin@kgamify.in" className="text-[#ff8200] underline">admin@kgamify.in</a></p>
+          </div>
+        </div>
       </div>
       <Footer isDarkMode={dark} $isDarkMode={dark} />
     </div>

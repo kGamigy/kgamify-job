@@ -22,6 +22,7 @@ import {
   MobileList, 
   MobileBottomSheet 
 } from '../components/MobileComponents';
+import { formatDateDDMMYYYY } from '../utils/date';
 import { MobileNavigation } from '../components/MobileNavigation';
 import VirtualScrollList from '../components/VirtualScrollList';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -278,7 +279,7 @@ const MobileDashboard = ({ isDarkMode, email }) => {
           
           <div className="flex items-center">
             <FaCalendarAlt className="h-3 w-3 mr-2 text-gray-600 dark:text-gray-400" />
-            <span className="text-gray-600 dark:text-gray-300">{new Date(job.createdAt || job.datePosted).toLocaleDateString()}</span>
+            <span className="text-gray-600 dark:text-gray-300">{formatDateDDMMYYYY(job.createdAt || job.datePosted)}</span>
           </div>
         </div>
       </div>
